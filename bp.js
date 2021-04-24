@@ -1,7 +1,7 @@
 /* Hardware */
 let _hardware = {
-    canvasWidth : 512,
-    canvasHeight: 512,
+    width : 512,
+    height: 512,
     canvas: () => document.getElementById('canvas'),
     input: {
         mouse: {
@@ -403,10 +403,10 @@ function loop() {
 
 function main() {
     // Canvas
-    _hardware.canvas().width = _hardware.canvasWidth;
-    _hardware.canvas().style.width = _hardware.canvasWidth;
-    _hardware.canvas().height = _hardware.canvasHeight;
-    _hardware.canvas().style.height = _hardware.canvasHeight;
+    _hardware.canvas().width = _hardware.width;
+    _hardware.canvas().style.width = _hardware.width;
+    _hardware.canvas().height = _hardware.height;
+    _hardware.canvas().style.height = _hardware.height;
 
     // Key events
     document.onkeydown = e => _hardware.input[e.key] = true;
