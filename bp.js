@@ -37,7 +37,6 @@ let _hardware = {
         size: 16,
         color: 7
     },
-    pixelGridScale: 4,
     defaultPixelScale: 4
 }
 
