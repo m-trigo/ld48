@@ -45,7 +45,7 @@ function FPS(on) {
     _hardware.displayFPS = on;
 }
 
-function enableGrid(display, size = 16, color = 7) {
+function enableGrid(display, size = _hardware.pixelGrid.size, color = _hardware.pixelGrid.color) {
     _hardware.pixelGrid = { display, size, color };
 }
 
@@ -217,7 +217,7 @@ function loadFontFamily(name, src) {
     loadingPromises.push(promise);
 }
 
-function setDefaultFont(name, size = 16, weight = '') {
+function setDefaultFont(name, size = _hardware.defaultFont.size, weight = '') {
     _hardware.defaultFont = new Font(name, size, weight);
 }
 
