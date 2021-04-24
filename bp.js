@@ -174,10 +174,10 @@ function screen() {
 
 /* Input */
 let btns = {
-    up: { pressed: false, repeat: false, keys: ['Up', 'ArrowUp'] },
-    down: { pressed: false, repeat: false, keys: ['Down', 'ArrowDown']  },
-    left: { pressed: false, repeat: false, keys: ['Left', 'ArrowLeft']  },
-    right: { pressed: false, repeat: false, keys: ['Right', 'ArrowRight']  },
+    up: { pressed: false, repeat: false, keys: ['Up', 'ArrowUp', 'W'] },
+    left: { pressed: false, repeat: false, keys: ['Left', 'ArrowLeft', 'A']  },
+    down: { pressed: false, repeat: false, keys: ['Down', 'ArrowDown', 'S']  },
+    right: { pressed: false, repeat: false, keys: ['Right', 'ArrowRight', 'D']  },
     x: { pressed: false, repeat: false, keys: ['X']  },
     o: { pressed: false, repeat: false, keys: ['C']  }
 };
@@ -349,15 +349,16 @@ function loop() {
     for (let btn in btns) {
         let done = false;
         btns[btn].keys.forEach(key => {
+            key = key.toUpperCase();
             if (_hardware.input[key] === undefined || done) {
                 return;
             }
-            done = true;
             btns[btn].repeat = btns[btn].pressed;
             btns[btn].pressed = _hardware.input[key];
             if (!btns[btn].pressed) {
                 btns[btn].repeat = false;
             }
+            done = btns[btn].pressed;
         });
     }
 
@@ -408,8 +409,8 @@ function main() {
     _hardware.canvas().style.height = _hardware.height;
 
     // Key events
-    document.onkeydown = e => _hardware.input[e.key] = true;
-    document.onkeyup = e => _hardware.input[e.key] = false;
+    document.onkeydown = e => _hardware.input[e.key.toUpperCase()] = true;
+    document.onkeyup = e => _hardware.input[e.key.toUpperCase()] = false;
 
     // Mouse events
     _hardware.canvas().onmousemove = e => {
