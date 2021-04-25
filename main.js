@@ -1,61 +1,59 @@
+const pixelSize = _hardware.defaultPixelScale;
+const marginSize = pixelSize * 4;
+
 // Data Types
 class Player {
 
-    static leftSpriteIndex = 0;
-    static rightSpriteIndex = 4;
-    static verticalSpeed = 0;
     static horizontalSpeed = 256;
 
     constructor() {
         this.size =  spriteSheet['player'].spriteWidth;
-        this.velocity = new Vec(Player.horizontalSpeed, Player.verticalSpeed);
-        this.pos = new Vec(screen().width/2 - this.size / 2, screen().height / 2 - this.size);
-        this.spriteIndex = 0;
-        this.animation = null;
-        this.oscilationAmplitude = 8;
+        this.pos = new Vec(screen().width/2, screen().height/2);
+        this.velocity = new Vec(0, 0);
+        this.accelerationFactor = 4;
+        this.world
+        this.oscilationAmplitude = pixelSize;
         this.oscilationSpeed = 5;
         this.elapsed = 0;
         this.state = 'idle';
+        this.fuel = 100;
+        this.shield = 100;
     }
 
     update(dt) {
         if (this.state == 'right') {
-            this.velocity.x = Player.horizontalSpeed;
+            this.velocity.x += (Player.horizontalSpeed - this.velocity.x) * this.accelerationFactor * dt;
+            if (this.velocity.x > Player.horizontalSpeed) {
+                this.velocity.x = Player.horizontalSpeed
+            }
         }
         else if (this.state == 'left') {
-            this.velocity.x = -Player.horizontalSpeed;
+            this.velocity.x += (-Player.horizontalSpeed - this.velocity.x) * this.accelerationFactor * dt;
+            if (this.velocity.x < -Player.horizontalSpeed) {
+                this.velocity.x = -Player.horizontalSpeed
+            }
         }
         else {
-            this.velocity.x = 0;
-        }
-        player.pos = player.pos.add(player.velocity.mult(dt));
-
-        if (this.animation == null) {
-            let step = null;
-            if (this.state == 'left' && this.spriteIndex == Player.rightSpriteIndex) {
-                step = () => this.spriteIndex--;
+            this.velocity.x -= this.velocity.x * this.accelerationFactor * dt;
+            if (Math.abs(this.velocity.x) < pixelSize) {
+                this.velocity.x = 0;
             }
-            else if (this.state == 'right' && this.spriteIndex == Player.leftSpriteIndex) {
-                step = () => this.spriteIndex++;
-            }
-
-            if (step) {
-                this.animation = new StepAnimation(0.4, 4, step, null, () => this.animation = null);
-
-            }
-
         }
 
+        this.pos = this.pos.add(this.velocity.mult(dt));
+        this.pos.x = Math.round(this.pos.x);
         this.state = 'idle';
     }
 
     draw(dt) {
+        print(this.velocity.x, 0, 0, 7);
+
         this.elapsed += dt;
         if (this.animation) {
             this.animation.animate(dt);
         }
         let yOffset = Math.sin(this.elapsed * 5) * this.oscilationAmplitude;
-        spriteSheet['player'].spr(this.spriteIndex, player.pos.x, player.pos.y + yOffset);
+        spriteSheet['player'].spr(0, player.pos.x, player.pos.y + yOffset);
     }
 };
 
@@ -87,27 +85,41 @@ class Cloud {
 
 // Variables
 let player = null;
-let clouds = [];
+let asteroids = [];
+
+function drawProgressBar() {
+    let start = marginSize + pixelSize * 3;
+    let end = screen().width - marginSize - pixelSize * 5;
+    let ctx = drawingContext();
+    ctx.strokeStyle = colors[7];
+    ctx.beginPath();
+    ctx.lineWidth = pixelSize;
+    ctx.moveTo(start, marginSize + ctx.lineWidth * (1.5));
+    ctx.lineTo(end, marginSize + ctx.lineWidth * (1.5));
+    ctx.stroke();
+    ctx.closePath();
+}
 
 // Life Cycle
 function load() {
-    loadSpriteSheet('player', './sprites/player.png', 1, 8);
-    loadSpriteSheet('heart', './sprites/heart.png', 1, 1);
-    loadSpriteSheet('clouds', './sprites/clouds.png', 1, 2);
+    loadSpriteSheet('player', './sprites/player.png', 1, 1);
+    loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
+    loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
+    loadSpriteSheet('progress-bar', './sprites/progress-bar.png', 1, 1);
 }
 
 function init() {
+    //enableGrid(true);
     player = new Player();
-    for (let i = 0; i < 4; i++) {
-        clouds.push(new Cloud());
-    }
 }
 
 function draw(dt) {
-    cls(7);
-    clouds.forEach(c => c.draw(dt));
+    cls(0);
+    //spriteSheet['margin'].spr(0, 0, 0);
+    spriteSheet['hud-bars'].spr(0, marginSize, screen().height - marginSize - spriteSheet['hud-bars'].spriteHeight);
+    spriteSheet['progress-bar'].spr(0, 0, marginSize);
     player.draw(dt);
-
+    drawProgressBar();
 }
 
 function update(dt) {
@@ -121,14 +133,7 @@ function update(dt) {
 
     // Process
     player.update(dt);
-    clouds.forEach(c => c.update(dt));
 
     // Output
     draw(dt);
 }
-
-/*
- -- Notes --
- Streak: Heartbroken > Taken > LOVESTRUCK
- Not trully random. Suffle + Limit abs diff between values
-*/
