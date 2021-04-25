@@ -286,6 +286,10 @@ class SpriteSheet {
             this.unscaledSpriteWidth, this.unscaledSpriteHeight,
             x, y, this.spriteWidth, this.spriteHeight)
     }
+
+    cspr(index, x, y) {
+        this.spr(0, x - this.spriteWidth / 2, y - this.spriteHeight / 2);
+    }
 }
 
 let spriteSheet = {};
