@@ -5,10 +5,13 @@ const marginSize = pixelSize * 4;
 class Player {
 
     static horizontalSpeed = 256;
+    static travelSpeed = 16;
 
     constructor() {
-        this.size =  spriteSheet['player'].spriteWidth;
+        this.sprite = spriteSheet['player'];
+        this.size = this.sprite.spriteWidth;
         this.pos = new Vec(screen().width/2, screen().height/2);
+        this.wpos = new Vec(0, 0);
         this.velocity = new Vec(0, 0);
         this.accelerationFactor = pixelSize * 2;
         this.world
@@ -40,18 +43,23 @@ class Player {
             }
         }
 
+        let opos = this.pos;
         this.pos = this.pos.add(this.velocity.mult(dt));
-        this.pos.x = Math.round(this.pos.x);
+        let dpos = this.pos.sub(opos);
+        this.wpos = this.wpos.add(dpos);
+        this.wpos.y += Player.travelSpeed * dt;
         this.state = 'idle';
     }
 
     draw(dt) {
+        print(`pos: (${Math.round(this.wpos.x)}, ${Math.round(this.wpos.y)})`, 0, 0, 7);
+
         this.elapsed += dt;
         if (this.animation) {
             this.animation.animate(dt);
         }
         let yOffset = Math.sin(this.elapsed * 5) * this.oscilationAmplitude;
-        spriteSheet['player'].spr(0, player.pos.x, player.pos.y + yOffset);
+        this.sprite.cspr(0, player.pos.x + pixelSize, player.pos.y - pixelSize + yOffset);
     }
 };
 
@@ -82,10 +90,16 @@ class Cloud {
 };
 
 // Variables
+let levels = [ { end: 256 } ];
+let levelIndex = 0;
 let player = null;
 let asteroids = [];
 
-function drawProgressBar() {
+let progressBar = {
+    elapsed: 0,
+    period: 1
+}
+function drawProgressBar(dt) {
     let ctx = drawingContext();
     ctx.lineWidth = pixelSize;
 
@@ -99,10 +113,9 @@ function drawProgressBar() {
     ctx.stroke();
     ctx.closePath();
 
-    let progress = player.pos.x / screen().width;
+    let progress = player.wpos.y / levels[levelIndex].end;
     progress = Math.min(progress, 1);
     progress = Math.max(0, progress);
-    print(progress, 0, 0, 7);
     let width = pixelSize * 7;
     let x = Math.floor(start + (end - width - start) * progress);
     ctx.beginPath();
@@ -112,9 +125,16 @@ function drawProgressBar() {
     ctx.stroke();
     ctx.closePath();
 
-    let rect = new Rect(new Vec(x + 2 * pixelSize, y -1.5 * pixelSize), pixelSize * 3, pixelSize * 3);
-    rect.color = 7;
-    rect.draw();
+    progressBar.elapsed += dt;
+    if (progressBar.elapsed < progressBar.period * (5/6)) {
+        let rect = new Rect(new Vec(x + 2 * pixelSize, y -1.5 * pixelSize), pixelSize * 3, pixelSize * 3);
+        rect.color = 7;
+        rect.draw();
+    }
+
+    if (progressBar.elapsed > progressBar.period) {
+        progressBar.elapsed %= progressBar.period;
+    }
 }
 
 // Life Cycle
@@ -136,7 +156,7 @@ function draw(dt) {
     spriteSheet['hud-bars'].spr(0, marginSize, screen().height - marginSize - spriteSheet['hud-bars'].spriteHeight);
     spriteSheet['progress-bar'].spr(0, 0, marginSize);
     player.draw(dt);
-    drawProgressBar();
+    drawProgressBar(dt);
 }
 
 function update(dt) {
@@ -148,17 +168,22 @@ function update(dt) {
         player.state = 'right';
     }
 
-    // Debug
-    if (btnp('up')) {
-        player.pos.x = Math.floor(player.pos.x + pixelSize);
-    }
-    if (btnp('down')) {
-        player.pos.x = Math.floor(player.pos.x - pixelSize);
-    }
-
     // Process
     player.update(dt);
 
     // Output
     draw(dt);
 }
+
+/*
+- World position
+- Player movement in world
+- Reach end
+- Implement fuel
+- Implement fuel pick up
+- Add asteroids + shield
+
+- Deal with out of bounds left + right
+
+- Portals
+*/

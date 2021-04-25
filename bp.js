@@ -464,3 +464,7 @@ function main() {
         requestAnimationFrame(loop);
     }).catch(e => console.log(e));
 }
+
+/*
+TODO: Replace line drawins with rectangle drawins whenever possible.
+*/
