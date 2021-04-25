@@ -5,63 +5,126 @@ const marginSize = pixelSize * 4;
 class Player {
 
     static horizontalSpeed = 256;
-    static travelSpeed = 16;
+    static travelSpeed = 128;
+    static maxFuel = 20;
+    static startingFuel = Player.maxFuel * 2/5;
+    static baseFuelCost = 1;
+    static screenY = 512 * 3/4;
 
     constructor() {
-        this.sprite = spriteSheet['player'];
-        this.size = this.sprite.spriteWidth;
-        this.pos = new Vec(screen().width/2, screen().height/2);
-        this.wpos = new Vec(0, 0);
-        this.velocity = new Vec(0, 0);
+        this.size = spriteSheet['player'].spriteWidth;
+        this.pos = new Vec(screen().width / 2, 0);
+        this.velocity = new Vec(0, Player.travelSpeed);
         this.accelerationFactor = pixelSize * 2;
         this.world
         this.oscilationAmplitude = pixelSize;
         this.oscilationSpeed = 5;
         this.elapsed = 0;
         this.state = 'idle';
-        this.fuel = 100;
-        this.shield = 100;
+        this.fuel = Player.startingFuel;
+        this.shield = 20;
     }
 
-    update(dt) {
-        if (this.state == 'right') {
-            this.velocity.x += (Player.horizontalSpeed - this.velocity.x) * this.accelerationFactor * dt;
-            if (this.velocity.x > Player.horizontalSpeed) {
-                this.velocity.x = Player.horizontalSpeed
+    draw(dt, pos) {
+        this.elapsed += dt;
+        let yOffset = Math.sin(this.elapsed * 5) * this.oscilationAmplitude;
+        spriteSheet['player'].cspr(0, pos.x + pixelSize, pos.y - pixelSize + yOffset);
+    }
+};
+
+class Fuel {
+
+    constructor(x, y) {
+        this.pos = new Vec(x, y);
+        this.refillAmount = Player.maxFuel * 1/5;
+        this.pickedUp = false;
+    }
+
+    draw(dt, pos) {
+        if (this.pickedUp) {
+            return;
+        }
+        spriteSheet['items'].cspr(0, pos.x, pos.y);
+    }
+}
+
+class Level {
+    constructor(index) {
+        this.index = index;
+        this.end = Player.travelSpeed * 20;
+        this.fuels = [
+            new Fuel(256, Player.travelSpeed * 10)
+        ];
+    }
+
+    updatePlayer(dt) {
+        if (player.state == 'right') {
+            player.velocity.x += (Player.horizontalSpeed - player.velocity.x) * player.accelerationFactor * dt;
+            if (player.velocity.x > Player.horizontalSpeed) {
+                player.velocity.x = Player.horizontalSpeed
             }
         }
-        else if (this.state == 'left') {
-            this.velocity.x += (-Player.horizontalSpeed - this.velocity.x) * this.accelerationFactor * dt;
-            if (this.velocity.x < -Player.horizontalSpeed) {
-                this.velocity.x = -Player.horizontalSpeed
+        else if (player.state == 'left') {
+            player.velocity.x += (-Player.horizontalSpeed - player.velocity.x) * player.accelerationFactor * dt;
+            if (player.velocity.x < -Player.horizontalSpeed) {
+                player.velocity.x = -Player.horizontalSpeed
             }
         }
         else {
-            this.velocity.x -= this.velocity.x * this.accelerationFactor * 0.5 * dt;
-            if (Math.abs(this.velocity.x) < pixelSize) {
-                this.velocity.x = 0;
+            player.velocity.x -= player.velocity.x * player.accelerationFactor * 0.5 * dt;
+            if (Math.abs(player.velocity.x) < pixelSize) {
+                player.velocity.x = 0;
             }
         }
 
-        let opos = this.pos;
-        this.pos = this.pos.add(this.velocity.mult(dt));
-        let dpos = this.pos.sub(opos);
-        this.wpos = this.wpos.add(dpos);
-        this.wpos.y += Player.travelSpeed * dt;
-        this.state = 'idle';
+        if (player.fuel > 0) {
+            player.fuel = Math.max(player.fuel - dt, 0);
+        }
+        else {
+            // This will change once we have asteroids.
+            // Space has no friction, fuel = cost to dodge
+            // Running out of fuel relies on shield + luck to go over a fuel pickup
+            player.velocity.y -= player.velocity.y * player.accelerationFactor * 0.1 * dt;
+            if (Math.abs(player.velocity.y) < pixelSize) {
+                player.velocity.y = 0;
+            }
+            player.velocity.x = 0;
+        }
+
+        player.pos = player.pos.add(player.velocity.mult(dt));
+
+        player.state = 'idle';
+    }
+
+    update(dt) {
+        this.updatePlayer(dt);
+        this.fuels.forEach(fuel => {
+            if (fuel.pickedUp) {
+                return;
+            }
+            let spriteRange = spriteSheet['player'].spriteWidth / 2 + spriteSheet['items'].spriteWidth;
+            let xCollides = Math.abs(player.pos.x - fuel.pos.x) < spriteRange;
+            let yCollides = Math.abs(player.pos.y - fuel.pos.y) < spriteRange;
+            if (xCollides && yCollides) {
+                player.fuel += fuel.refillAmount;
+                fuel.pickedUp = true;
+            }
+        });
+    }
+
+    drawToScreen(dt, obj) {
+        let drawPos = obj.pos.copy();
+        let yToPlayer = obj.pos.y - player.pos.y;
+        drawPos.y = Player.screenY - yToPlayer;
+        obj.draw(dt, drawPos);
     }
 
     draw(dt) {
-        print(`pos: (${Math.round(this.wpos.x)}, ${Math.round(this.wpos.y)})`, 0, 0, 7);
-
-        this.elapsed += dt;
-        if (this.animation) {
-            this.animation.animate(dt);
-        }
-        let yOffset = Math.sin(this.elapsed * 5) * this.oscilationAmplitude;
-        this.sprite.cspr(0, player.pos.x + pixelSize, player.pos.y - pixelSize + yOffset);
+        print(`pos: (${Math.round(player.pos.x)}, ${Math.round(player.pos.y)})`, 0, 0, 7);
+        this.fuels.forEach(fuel => this.drawToScreen(dt, fuel));
+        this.drawToScreen(dt, player)
     }
-};
+}
 
 class Cloud {
 
@@ -90,50 +153,77 @@ class Cloud {
 };
 
 // Variables
-let levels = [ { end: 256 } ];
+let levels = [ new Level(0) ];
 let levelIndex = 0;
 let player = null;
 let asteroids = [];
 
+// HUD
 let progressBar = {
     elapsed: 0,
-    period: 1
-}
-function drawProgressBar(dt) {
-    let ctx = drawingContext();
-    ctx.lineWidth = pixelSize;
+    period: 1,
+    draw(dt) {
+        let ctx = drawingContext();
+        ctx.lineWidth = pixelSize;
 
-    let y = marginSize + ctx.lineWidth * (1.5);
-    let start = marginSize + pixelSize * 3;
-    let end = screen().width - marginSize - pixelSize * 5;
-    ctx.beginPath();
-    ctx.strokeStyle = colors[7];
-    ctx.moveTo(start, y);
-    ctx.lineTo(end, y);
-    ctx.stroke();
-    ctx.closePath();
+        let y = marginSize + ctx.lineWidth * (1.5);
+        let start = marginSize + pixelSize * 3;
+        let end = screen().width - marginSize - pixelSize * 5;
+        ctx.beginPath();
+        ctx.strokeStyle = colors[7];
+        ctx.moveTo(start, y);
+        ctx.lineTo(end, y);
+        ctx.stroke();
+        ctx.closePath();
 
-    let progress = player.wpos.y / levels[levelIndex].end;
-    progress = Math.min(progress, 1);
-    progress = Math.max(0, progress);
-    let width = pixelSize * 7;
-    let x = Math.floor(start + (end - width - start) * progress);
-    ctx.beginPath();
-    ctx.strokeStyle = colors[0];
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + width, y);
-    ctx.stroke();
-    ctx.closePath();
+        let progress = player.pos.y / levels[levelIndex].end;
+        progress = Math.min(progress, 1);
+        progress = Math.max(0, progress);
+        let width = pixelSize * 7;
+        let x = Math.floor(start + (end - width - start) * progress);
+        ctx.beginPath();
+        ctx.strokeStyle = colors[0];
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + width, y);
+        ctx.stroke();
+        ctx.closePath();
 
-    progressBar.elapsed += dt;
-    if (progressBar.elapsed < progressBar.period * (5/6)) {
+        progressBar.elapsed += dt;
+        if (progressBar.elapsed > progressBar.period) {
+            progressBar.elapsed %= progressBar.period;
+        }
+
+        if (progressBar.elapsed > progressBar.period * (5/6)) {
+            return;
+        }
+
         let rect = new Rect(new Vec(x + 2 * pixelSize, y -1.5 * pixelSize), pixelSize * 3, pixelSize * 3);
-        rect.color = 7;
+        rect.color = colors[7];
         rect.draw();
     }
+}
 
-    if (progressBar.elapsed > progressBar.period) {
-        progressBar.elapsed %= progressBar.period;
+let fuelBar = {
+    draw(dt) {
+        let progress = Math.ceil(player.fuel) / Player.maxFuel;
+        progress = Math.min(progress, 1);
+        progress = Math.max(0, progress);
+
+        let width = 4 * pixelSize * Player.maxFuel * progress;
+        let x = 136;
+        let y = 452;
+        let rect = new Rect(new Vec(x, y), width, pixelSize * 3);
+        rect.color = colors[12];
+        rect.draw();
+    }
+}
+
+let fadeToBlack = {
+    elapsed: 0,
+    duration: 2,
+    area: new Rect(new Vec(0, 0), 512, 512),
+    draw(dt) {
+        let progress = this.elapsed / this.duration;
     }
 }
 
@@ -143,6 +233,7 @@ function load() {
     loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
     loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
     loadSpriteSheet('progress-bar', './sprites/progress-bar.png', 1, 1);
+    loadSpriteSheet('items', './sprites/items.png', 1, 1);
 }
 
 function init() {
@@ -153,10 +244,17 @@ function init() {
 function draw(dt) {
     cls(0);
     //spriteSheet['margin'].spr(0, 0, 0);
-    spriteSheet['hud-bars'].spr(0, marginSize, screen().height - marginSize - spriteSheet['hud-bars'].spriteHeight);
+
+    // Level
+    let level = levels[levelIndex];
+    level.draw(dt);
+
+    // HUD
     spriteSheet['progress-bar'].spr(0, 0, marginSize);
-    player.draw(dt);
-    drawProgressBar(dt);
+    progressBar.draw(dt);
+
+    spriteSheet['hud-bars'].spr(0, marginSize, screen().height - marginSize - spriteSheet['hud-bars'].spriteHeight);
+    fuelBar.draw(dt);
 }
 
 function update(dt) {
@@ -164,26 +262,45 @@ function update(dt) {
     if (btn('left')) {
         player.state = 'left';
     }
+
     if (btn('right')) {
         player.state = 'right';
     }
 
+    // Debug
+    if (mouse.justPressed) {
+        let mx = Math.floor(mouse.position.x);
+        mx = mx - mx % pixelSize;
+        let my = Math.floor(mouse.position.y);
+        my = my - my % pixelSize;
+        console.log({mx, my});
+    }
+
     // Process
-    player.update(dt);
+    let level = levels[levelIndex];
+    level.update(dt);
+
+    if (player.pos.y > level.end) {
+        // Victory screen
+    }
+    else if (player.fuel <= 0) {
+        // Lose screen
+    }
 
     // Output
     draw(dt);
 }
 
 /*
-- World position
-- Player movement in world
-- Reach end
-- Implement fuel
-- Implement fuel pick up
-- Add asteroids + shield
+- Reach end (Win Condition)
+- Out of fuel (Lose Condition)
 
 - Deal with out of bounds left + right
 
-- Portals
+- Portals & Recursion
+
+- Add asteroids + shield
+- Fuel is only to doge!
+- Balance and polish
+
 */

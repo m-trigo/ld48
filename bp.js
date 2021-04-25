@@ -80,6 +80,10 @@ class Vec {
     div(scalar) {
         return new Vec(this.x/scalar, this.y/scalar);
     }
+
+    copy() {
+        return new Vec(this.x, this.y);
+    }
 }
 
 class Rect {
@@ -89,7 +93,7 @@ class Rect {
         this.width = width;
         this.height = height;
         this.visible = true;
-        this.color = 14;
+        this.color = colors[14];
     }
 
     draw() {
@@ -97,7 +101,7 @@ class Rect {
         let ctx = drawingContext();
         ctx.beginPath();
         ctx.rect(this.start.x, this.start.y, this.width, this.height);
-        ctx.fillStyle = colors[this.color];
+        ctx.fillStyle = this.color;
         ctx.fill();
         ctx.closePath();
     }
