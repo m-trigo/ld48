@@ -10,7 +10,7 @@ class Player {
         this.size =  spriteSheet['player'].spriteWidth;
         this.pos = new Vec(screen().width/2, screen().height/2);
         this.velocity = new Vec(0, 0);
-        this.accelerationFactor = 4;
+        this.accelerationFactor = pixelSize * 2;
         this.world
         this.oscilationAmplitude = pixelSize;
         this.oscilationSpeed = 5;
@@ -34,7 +34,7 @@ class Player {
             }
         }
         else {
-            this.velocity.x -= this.velocity.x * this.accelerationFactor * dt;
+            this.velocity.x -= this.velocity.x * this.accelerationFactor * 0.5 * dt;
             if (Math.abs(this.velocity.x) < pixelSize) {
                 this.velocity.x = 0;
             }
@@ -46,8 +46,6 @@ class Player {
     }
 
     draw(dt) {
-        print(this.velocity.x, 0, 0, 7);
-
         this.elapsed += dt;
         if (this.animation) {
             this.animation.animate(dt);
@@ -88,16 +86,35 @@ let player = null;
 let asteroids = [];
 
 function drawProgressBar() {
+    let ctx = drawingContext();
+    ctx.lineWidth = pixelSize;
+
+    let y = marginSize + ctx.lineWidth * (1.5);
     let start = marginSize + pixelSize * 3;
     let end = screen().width - marginSize - pixelSize * 5;
-    let ctx = drawingContext();
-    ctx.strokeStyle = colors[7];
     ctx.beginPath();
-    ctx.lineWidth = pixelSize;
-    ctx.moveTo(start, marginSize + ctx.lineWidth * (1.5));
-    ctx.lineTo(end, marginSize + ctx.lineWidth * (1.5));
+    ctx.strokeStyle = colors[7];
+    ctx.moveTo(start, y);
+    ctx.lineTo(end, y);
     ctx.stroke();
     ctx.closePath();
+
+    let progress = player.pos.x / screen().width;
+    progress = Math.min(progress, 1);
+    progress = Math.max(0, progress);
+    print(progress, 0, 0, 7);
+    let width = pixelSize * 7;
+    let x = Math.floor(start + (end - width - start) * progress);
+    ctx.beginPath();
+    ctx.strokeStyle = colors[0];
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + width, y);
+    ctx.stroke();
+    ctx.closePath();
+
+    let rect = new Rect(new Vec(x + 2 * pixelSize, y -1.5 * pixelSize), pixelSize * 3, pixelSize * 3);
+    rect.color = 7;
+    rect.draw();
 }
 
 // Life Cycle
@@ -129,6 +146,14 @@ function update(dt) {
     }
     if (btn('right')) {
         player.state = 'right';
+    }
+
+    // Debug
+    if (btnp('up')) {
+        player.pos.x = Math.floor(player.pos.x + pixelSize);
+    }
+    if (btnp('down')) {
+        player.pos.x = Math.floor(player.pos.x - pixelSize);
     }
 
     // Process
