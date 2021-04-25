@@ -381,8 +381,9 @@ function loop() {
     if (_hardware.pixelGrid.display) {
         let size = _hardware.pixelGrid.size;
         let ctx = _hardware.context();
-        ctx.strokeStyle  = colors[_hardware.pixelGrid.color] + '70';
         for (let x = size / 2; x < screen().width; x +=size * 2) {
+            let halfwayLine = Math.abs(x - screen().width / 2) < pixelSize;
+            ctx.strokeStyle  = colors[_hardware.pixelGrid.color] + (halfwayLine ? 'C0' : '70');
             ctx.beginPath();
             ctx.lineWidth = size;
             ctx.moveTo(x, 0);
@@ -391,6 +392,8 @@ function loop() {
             ctx.closePath();
         }
         for (let y = size / 2; y < screen().height; y += size * 2) {
+            let halfwayLine = Math.abs(y - screen().height / 2) < pixelSize;
+            ctx.strokeStyle  = colors[_hardware.pixelGrid.color] + (halfwayLine ? 'C0' : '70');
             ctx.beginPath();
             ctx.lineWidth = size;
             ctx.moveTo(0, y);
