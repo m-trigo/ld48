@@ -1,16 +1,15 @@
-
 // Data Types
 class Player {
 
     static leftSpriteIndex = 0;
     static rightSpriteIndex = 4;
     static verticalSpeed = 0;
-    static horizontalSpeed = 64;
+    static horizontalSpeed = 256;
 
     constructor() {
+        this.size =  spriteSheet['player'].spriteWidth;
         this.velocity = new Vec(Player.horizontalSpeed, Player.verticalSpeed);
-        this.size = 16 * _hardware.defaultPixelScale;
-        this.pos = new Vec(512/2 - this.size/2, 512 * 1/2);
+        this.pos = new Vec(screen().width/2 - this.size / 2, screen().height / 2 - this.size);
         this.spriteIndex = 0;
         this.animation = null;
         this.oscilationAmplitude = 8;
@@ -29,6 +28,7 @@ class Player {
         else {
             this.velocity.x = 0;
         }
+        player.pos = player.pos.add(player.velocity.mult(dt));
 
         if (this.animation == null) {
             let step = null;
@@ -44,9 +44,7 @@ class Player {
 
             }
 
-            player.pos = player.pos.add(player.velocity.mult(dt));
         }
-
 
         this.state = 'idle';
     }
@@ -61,101 +59,69 @@ class Player {
     }
 };
 
-class HeartPiece {
-
-    static size = _hardware.defaultPixelScale;
-
-    constructor(x, y) {
-        this.pos = new Vec(x, y);
-    }
-
-    draw(dt) {
-        let ctx = drawingContext();
-        ctx.beginPath();
-        ctx.fillStyle = colors[8];
-        ctx.rect(this.pos.x, this.pos.y, HeartPiece.size, HeartPiece.size);
-        ctx.fill();
-        ctx.closePath();
-    }
-}
-
-class HeartTrail {
-
-    static maxLength = 8;
-    static spawnPeriod = 0.4;
-    static fallSpeed = 256;
-    static maxHorizontalOffset = 16;
+class Cloud {
 
     constructor() {
-        this.elapsed = 0;
-        this.index = 0;
-        this.list = [];
-        for (let i = 0; i < HeartTrail.maxLength; i++) {
-            this.list.push(new HeartPiece(-HeartPiece.size, -HeartPiece.size));
-        }
+        this.x = 0;
+        this.y = 0;
+        this.speed = -512;
+        this.reset();
     }
 
-    draw(dt) {
-        this.list.forEach(heart => heart.draw(dt));
+    reset() {
+        this.x = Math.floor(Math.random() * (screen().width - spriteSheet['clouds'].spriteHeight));
+        this.y = Math.floor(screen().height + Math.floor(Math.random() * 100));
     }
 
     update(dt) {
-
-        this.list.forEach(heart => {
-            heart.pos.y -= HeartTrail.fallSpeed * dt;
-        });
-
-        this.elapsed += dt;
-        if (this.elapsed < HeartTrail.spawnPeriod) {
-            return;
+        this.y += this.speed * dt;
+        if (this.y < -spriteSheet['clouds'].spriteHeight) {
+            this.reset();
         }
-        this.elapsed %= HeartTrail.spawnPeriod;
-        this.elapsed += (Math.random() - 0.5)/16;
+    }
 
-        let heart = this.list[this.index];
-        let offset = (Math.random() * 0.5 + 0.5) * HeartTrail.maxHorizontalOffset;
-        heart.pos.x = player.pos.x + offset + player.size / 2;
-        heart.pos.y = player.pos.y;
-
-        HeartTrail.maxHorizontalOffset *= -1;
-        this.index = (this.index + 1) % this.list.length;
+    draw(dt) {
+        spriteSheet['clouds'].spr(0, this.x, this.y)
     }
 };
 
 // Variables
-let player = new Player();
-let heartTrail = new HeartTrail();
+let player = null;
+let clouds = [];
 
 // Life Cycle
 function load() {
     loadSpriteSheet('player', './sprites/player.png', 1, 8);
     loadSpriteSheet('heart', './sprites/heart.png', 1, 1);
+    loadSpriteSheet('clouds', './sprites/clouds.png', 1, 2);
 }
 
 function init() {
+    player = new Player();
+    for (let i = 0; i < 4; i++) {
+        clouds.push(new Cloud());
+    }
 }
 
 function draw(dt) {
     cls(7);
-    spriteSheet['heart'].spr(0, 0, 0);
-    heartTrail.draw(dt);
+    clouds.forEach(c => c.draw(dt));
     player.draw(dt);
+
 }
 
 function update(dt) {
     // Input
     if (btn('left')) {
         player.state = 'left';
-        //player.move('left', dt);
     }
     if (btn('right')) {
         player.state = 'right';
-        //player.move('right', dt);
     }
 
     // Process
     player.update(dt);
-    heartTrail.update(dt);
+    clouds.forEach(c => c.update(dt));
 
     // Output
     draw(dt);
@@ -163,5 +129,6 @@ function update(dt) {
 
 /*
  -- Notes --
- Streak: Interested > Taken > LOVESTRUCK
+ Streak: Heartbroken > Taken > LOVESTRUCK
+ Not trully random. Suffle + Limit abs diff between values
 */
