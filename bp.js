@@ -34,7 +34,7 @@ let _hardware = {
     displayFPS: false,
     pixelGrid: {
         display: false,
-        size: 16,
+        size: 4,
         color: 7
     },
     defaultPixelScale: 4
