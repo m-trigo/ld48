@@ -375,17 +375,20 @@ function loop() {
     }
     update(dt);
     if (_hardware.pixelGrid.display) {
+        let size = _hardware.pixelGrid.size;
         let ctx = _hardware.context();
         ctx.strokeStyle  = colors[_hardware.pixelGrid.color] + '70';
-        for (let x = 0; x < screen().width; x += _hardware.pixelGrid.size) {
+        for (let x = size / 2; x < screen().width; x +=size * 2) {
             ctx.beginPath();
+            ctx.lineWidth = size;
             ctx.moveTo(x, 0);
             ctx.lineTo(x, screen().height);
             ctx.stroke();
             ctx.closePath();
         }
-        for (let y = 0; y < screen().height; y += _hardware.pixelGrid.size) {
+        for (let y = size / 2; y < screen().height; y += size * 2) {
             ctx.beginPath();
+            ctx.lineWidth = size;
             ctx.moveTo(0, y);
             ctx.lineTo(screen().width, y);
             ctx.stroke();
