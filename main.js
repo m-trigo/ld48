@@ -155,7 +155,7 @@ class Level {
     }
 
     randomItemX() {
-        let minX = marginSize + spriteSheet['items'].spriteWidth;
+        let minX = (marginSize + spriteSheet['items'].spriteWidth) * 2;
         let maxX = 512 - minX;
         let range = maxX - minX;
         let x = Math.floor(Math.sin(Math.random()) * (range + 1) + minX);
