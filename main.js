@@ -4,13 +4,13 @@ const marginSize = pixelSize * 4;
 
 // Debug Settings
 let freeControl = false;
-let visualDebug = true;
+let visualDebug = false;
 
 // Data Types
 class Player {
 
     static horizontalSpeed = 256;
-    static travelSpeed = 128;
+    static travelSpeed = 256;
     static maxFuel = 20;
     static startingFuel = Player.maxFuel / 2;
     static maxShield = 20;
@@ -77,13 +77,17 @@ class Item {
 class Asteroid {
 
     static nextId = 0;
+    static maxAmplitude = Player.travelSpeed;
 
-    constructor(index, x, y) {
+    constructor(index, x, y, entropy) {
         this.id = Asteroid.nextId++;
+        this.centerOfGravity = new Vec(x, y);
         this.pos = new Vec(x, y);
         this.index = index;
         this.speed = new Vec(0, 0);
         this.destroyed = false;
+        this.entropy = entropy
+        this.elapsed = 0;
     }
 
     get size() {
@@ -113,16 +117,6 @@ class Asteroid {
     }
 };
 
-/*
-    Duration = 100
-    Max Fuel = 20
-    PickUp Refill = 4
-
-    Min Pickups = 20
-
-    Fuel Spots every... 5
-
-*/
 class Level {
 
     constructor() {
@@ -144,6 +138,13 @@ class Level {
                 let y2 = Math.floor(Math.random() * 3 + 1) * Player.travelSpeed + y;
                 this.fuels.push(new Item('fuel', x2, y2));
             }
+        }
+
+        for (let i = 0; i < 190; i++) {
+            let x = this.randomItemX();
+            let y = Player.travelSpeed * 0.5 * (10 + i);
+            let entropy = i / 190 + Math.sin(Math.random());
+            this.asteroids.push(new Asteroid(Math.floor(Math.random() * 3), x, y, entropy));
         }
     }
 
@@ -231,6 +232,10 @@ class Level {
                 return;
             }
 
+            asteroid.elapsed += dt;
+            let offset = Math.floor(Math.sin(asteroid.elapsed) * Asteroid.maxAmplitude * asteroid.entropy);
+            asteroid.pos = asteroid.centerOfGravity.add(new Vec(offset, 0));
+
             let xCollides = asteroid.pos.x <= player.pos.x && player.pos.x <= asteroid.pos.x + asteroid.size;
             let yCollides = asteroid.pos.y - asteroid.size <= player.pos.y && player.pos.y <= asteroid.pos.y;
             if (xCollides && yCollides) {
@@ -273,7 +278,7 @@ class Level {
 }
 
 // Variables
-let stateUpdate = levelUpdate;//titleScreenUpdate;
+let stateUpdate = titleScreenUpdate;
 let player = null;
 let level = null;
 let largeFont = { name: 'pico8', size: 32, weight: '' };
@@ -395,9 +400,9 @@ let fadeToBlack = {
 // Game Loops
 function titleScreenUpdate(dt) {
     cls(0);
-    print('Game Title', pixelSize * 25, pixelSize * 25, 7, largeFont);
-    print('Move .... [A] or [D]', pixelSize * 18, pixelSize * 80, 7, mediumFont);
-    print('Start ... [X] or [C]', pixelSize * 18, pixelSize * 90, 7, mediumFont);
+    print('Game Title', pixelSize * 24, pixelSize * 32, 7, largeFont);
+    print('MOVE .... [A] or [D]', pixelSize * 24, pixelSize * 80, 7, mediumFont);
+    print('START ... [X] or [C]', pixelSize * 24, pixelSize * 90, 7, mediumFont);
 
     fadeToBlack.draw(dt);
     if (fadeToBlack.active) {
