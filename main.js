@@ -2,13 +2,15 @@
 const pixelSize = _hardware.defaultPixelScale;
 const marginSize = pixelSize * 4;
 
+let freeControl = true;
+
 // Data Types
 class Player {
 
     static horizontalSpeed = 256;
     static travelSpeed = 128;
     static maxFuel = 20;
-    static startingFuel = Player.maxFuel;
+    static startingFuel = Player.maxFuel / 4;
     static maxShield = 20;
     static startingShield = Player.maxShield / 5;
     static baseFuelCost = 1;
@@ -89,11 +91,12 @@ class Portal {
 
 class Asteroid {
 
-    constructor(x, y, index) {
+    constructor(index, x, y, label = '') {
         this.pos = new Vec(x, y);
         this.index = index;
         this.speed = new Vec(0, 0);
         this.destroyed = false;
+        this.label = label;
     }
 
     get size() {
@@ -115,31 +118,75 @@ class Asteroid {
         ctx.strokeRect(pos.x, pos.y, this.size, this.size);
 
         spriteSheet['asteroids'].spr(this.index, pos.x, pos.y)
+        if (this.label) {
+            let labelPos = pos.add(new Vec(2,2).mult(-pixelSize));
+            print(this.label, labelPos.x, labelPos.y, 7);
+        }
     }
 };
 
 class Level {
+
     constructor(index) {
         this.index = index;
         this.end = Player.travelSpeed * 20;
-        this.finishLine = new Portal('finish-line', new Vec(0, this.end), 512, 3);
         this.complete = false;
+        this.portal = new Portal('portal', new Vec(marginSize, Player.travelSpeed * 10))
+        this.finishLine = new Portal('finish-line', new Vec(0, this.end), 512, 3);
         this.fuels = [
-            new Item('fuel', 256, Player.travelSpeed * 10)
+            new Item('fuel', 256 - pixelSize * 16, Player.travelSpeed * 4),
+            new Item('fuel', 256, Player.travelSpeed * 6),
+            new Item('fuel', 384, Player.travelSpeed * 8),
+            new Item('fuel', 384, Player.travelSpeed * 10)
         ];
         this.shields = [
-            new Item('shield', 256, Player.travelSpeed * 5)
+            new Item('shield', 384, Player.travelSpeed * 5),
         ];
         this.asteroids = [
-            new Asteroid(256, Player.travelSpeed * 3, 0),
-            new Asteroid(156, Player.travelSpeed * 5, 1),
-            new Asteroid(256, Player.travelSpeed * 7, 2),
+            new Asteroid(2, 256, Player.travelSpeed * 3, 'A'),
+            new Asteroid(1, 128, Player.travelSpeed * 2, 'B'),
+            new Asteroid(2, 156, Player.travelSpeed * 5, 'C'),
+            new Asteroid(2, 384, Player.travelSpeed * 7, 'D'),
+            new Asteroid(2, 128, Player.travelSpeed * 7.5, 'E'),
+            new Asteroid(2, marginSize, Player.travelSpeed * 7, 'F'),
+            new Asteroid(2, marginSize, Player.travelSpeed * 8, 'G'),
+            new Asteroid(2, 256, Player.travelSpeed * 9, 'H'),
+
+
+            new Asteroid(2, 256, Player.travelSpeed * 11, 'I'),
+            new Asteroid(1, 128, Player.travelSpeed * 11, 'J'),
+            new Asteroid(2, 256, Player.travelSpeed * 11.5, 'L'),
+            new Asteroid(0, 128, Player.travelSpeed * 12, 'M'),
+            new Asteroid(0, 256, Player.travelSpeed * 12, 'N'),
+            new Asteroid(1, 384, Player.travelSpeed * 12.5, 'O'),
+            new Asteroid(1, 128, Player.travelSpeed * 13, 'P'),
+            new Asteroid(1, 256, Player.travelSpeed * 13, 'Q'),
+            new Asteroid(0, 384, Player.travelSpeed * 13, 'R'),
+            new Asteroid(2, 256, Player.travelSpeed * 13.5, 'S'),
         ];
         player.pos = new Vec(screen().width / 2, 0);
         player.velocity = new Vec(0, Player.travelSpeed);
+        this.charCode = 65;
     }
 
     updatePlayer(dt) {
+
+        if (freeControl) {
+            if (btn('up')) {
+                player.pos.y += pixelSize * 64 * dt;
+            }
+            if (btn('left')) {
+                player.pos.x -= pixelSize * 64 * dt;
+            }
+            if (btn('down')) {
+                player.pos.y -= pixelSize * 64 * dt;
+            }
+            if (btn('right')) {
+                player.pos.x += pixelSize * 64 * dt;
+            }
+            return;
+        }
+
         if (player.state == 'right') {
             player.velocity.x += (Player.horizontalSpeed - player.velocity.x) * Player.accelerationFactor * dt;
             if (player.velocity.x > Player.horizontalSpeed) {
@@ -208,7 +255,6 @@ class Level {
             if (xCollides && yCollides) {
                 asteroid.destroyed = true;
                 if (player.shield > 0 && player.shield <= asteroid.damage) {
-                    debugger;
                     fadeToBlack.endCallback = () => {
                         fadeToBlack.endCallback = null;
                         fadeToBlack.start(true);
@@ -243,6 +289,7 @@ class Level {
         this.asteroids.forEach(asteroid => this.drawToScreen(dt, asteroid));
         this.fuels.concat(this.shields).forEach(fuel => this.drawToScreen(dt, fuel));
         this.drawToScreen(dt, this.finishLine);
+        this.drawToScreen(dt, this.portal);
         this.drawToScreen(dt, player);
     }
 }
@@ -449,6 +496,7 @@ function load() {
     loadSpriteSheet('items', './sprites/items.png', 1, 2);
     loadSpriteSheet('finish-line', './sprites/finish-line.png', 1, 1);
     loadSpriteSheet('asteroids', './sprites/asteroids.png', 1, 3);
+    loadSpriteSheet('portal', './sprites/portal.png', 1, 1);
 }
 
 function init() {
@@ -483,6 +531,7 @@ function update(dt) {
 - (3h) Tutorialize
 - (3h) Balance
 
+- (2h) Animations
 - (2h) SFX
 - (1h) Screen shake
 - (1h) Polish HUD (flashing animations, shake animations)
