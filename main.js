@@ -114,9 +114,8 @@ class Asteroid {
 
 class Level {
 
-    constructor(index) {
-        this.index = index;
-        this.end = Player.travelSpeed * 10;
+    constructor() {
+        this.end = Player.travelSpeed * 25;
         this.complete = false;
         this.fuels = [
             new Item('fuel', 256 - pixelSize * 16, Player.travelSpeed * 4),
@@ -267,61 +266,10 @@ class Level {
     }
 }
 
-class Transition {
-
-    constructor(messages, callback) {
-        this.index = 0;
-        this.elapsed = 0;
-        this.speed = 20;
-        this.messages = messages;
-        this.callback = callback;
-    }
-
-    update(dt) {
-        this.elapsed += dt;
-
-        cls(0);
-
-        for (let i = 0; i <= this.index; i++) {
-            let message = this.messages[i];
-            let x = pixelSize * 8;
-            if (i % 2 != 0) {
-                x = 512 - x - message.length * 4 * pixelSize;
-            }
-
-            if (i < this.index ) {
-                print(message, x, (Math.floor(i/2) + 4) * pixelSize * 8, 7);
-            }
-            else {
-                let endIndex = Math.floor(this.elapsed * this.speed);
-                endIndex = Math.min(endIndex, message.length);
-                let section = message.substr(0, endIndex);
-                print(section, x, (Math.floor(i/2) + 4) * pixelSize * 8, 7);
-            }
-        }
-
-        fadeToBlack.draw(dt);
-        if (fadeToBlack.active) {
-            //return;
-        }
-
-        if ((btnp('x') || btnp('o'))) {
-            if (this.index < this.messages.length - 1) {
-                this.index++;
-                this.elapsed = 0;
-            }
-            else {
-                this.callback(); // make sure to activate fade-to-black
-            }
-        }
-    }
-}
-
 // Variables
-let stateUpdate = levelUpdate;//titleScreenUpdate;
+let stateUpdate = titleScreenUpdate;
 let player = null;
-let levels = [];
-let levelIndex = 0;
+let level = null;
 let largeFont = { name: 'Courier New', size: 48, weight: '' };
 let mediumFont = { name: 'Courier New', size: 32, weight: '' };
 
@@ -343,7 +291,7 @@ let progressBar = {
         ctx.stroke();
         ctx.closePath();
 
-        let progress = player.pos.y / levels[levelIndex].end;
+        let progress = player.pos.y / level.end;
         progress = Math.min(progress, 1);
         progress = Math.max(0, progress);
         let width = pixelSize * 7;
@@ -451,24 +399,11 @@ function titleScreenUpdate(dt) {
     }
 
     if (btnp('x') || btnp('o')) {
-        let titleToLevelTransition = new Transition([
-            'SECTOR', 'A',
-            'DEPTH', '0',
-            'DANGER', 'LOW',
-            'SCRAPS', 'NONE',
-            'FUEL', 'RARE',
-        ], () => fadeToBlack.start(() => {
+        fadeToBlack.start(() => {
             init();
             stateUpdate = levelUpdate;
-        }));
-        fadeToBlack.start(() => {
-            stateUpdate = dt => titleToLevelTransition.update(dt);
-        })
+        });
     }
-}
-
-function titleToLevelTransitionUpdate(dt) {
-    titleToLevelTransition.update(dt);
 }
 
 function levelUpdate(dt) {
@@ -482,7 +417,6 @@ function levelUpdate(dt) {
     }
 
     // Updates
-    let level = levels[levelIndex];
     level.update(dt);
 
     // Drawings
@@ -512,7 +446,9 @@ function gameOverUpdate(dt) {
     }
 
     if (btnp('x') || btnp('o')) {
-        stateUpdate = titleScreenUpdate;
+        fadeToBlack.start(() => {
+            stateUpdate = titleScreenUpdate;
+        });
     }
 }
 
@@ -527,16 +463,16 @@ function victoryUpdate(dt) {
     }
 
     if (btnp('x') || btnp('o')) {
-        stateUpdate = titleScreenUpdate;
+        fadeToBlack.start(() => {
+            stateUpdate = titleScreenUpdate;
+        });
     }
 }
 
 // Life Cycle
 function load() {
-
     loadFontFamily('pico8', './fonts/pico8.ttf');
     setDefaultFont('pico8');
-
     loadSpriteSheet('player', './sprites/player.png', 1, 1);
     loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
     loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
@@ -550,19 +486,17 @@ function load() {
 function init() {
     //enableGrid(true);
     player = new Player();
-    levels = [ new Level(0) ];
-    levelIndex = 0;
-
+    level = new Level();
 }
 
 function update(dt) {
     // Debug
     if (mouse.justPressed) {
-        let mx = Math.floor(mouse.position.x);
-        mx = mx - mx % pixelSize;
-        let my = Math.floor(mouse.position.y);
-        my = my - my % pixelSize;
-        console.log({mx, my});
+        let x = Math.floor(mouse.position.x);
+        x = x - x % pixelSize;
+        let y = Math.floor(mouse.position.y);
+        y = y - y % pixelSize;
+        console.log({x, y});
     }
 
     // Scene
