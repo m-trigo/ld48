@@ -140,6 +140,12 @@ class Level {
             }
         }
 
+        for (let i = 20; i <= 80; i += 20) {
+            let x = this.randomItemX();
+            let y = Player.travelSpeed * i;
+            this.shields.push(new Item('shield', x, y));
+        }
+
         for (let i = 0; i < 190; i++) {
             let x = this.randomItemX();
             let y = Player.travelSpeed * 0.5 * (10 + i);
@@ -279,7 +285,7 @@ class Level {
 }
 
 // Variables
-let stateUpdate = victoryUpdate//titleScreenUpdate;
+let stateUpdate = titleScreenUpdate;
 let player = null;
 let level = null;
 let largeFont = { name: 'pico8', size: 32, weight: '' };
