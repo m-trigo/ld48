@@ -292,7 +292,7 @@ class SpriteSheet {
     }
 
     cspr(index, x, y) {
-        this.spr(0, x - this.spriteWidth / 2, y - this.spriteHeight / 2);
+        this.spr(index, x - this.spriteWidth / 2, y - this.spriteHeight / 2);
     }
 }
 
