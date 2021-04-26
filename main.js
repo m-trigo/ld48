@@ -231,6 +231,7 @@ class Level {
             if (xCollides && yCollides) {
                 player[item.type] += item.refillAmount;
                 item.pickedUp = true;
+                sfx['pickup'].play();
             }
         });
 
@@ -251,6 +252,7 @@ class Level {
                     fadeToBlack.start(() => stateUpdate = gameOverUpdate);
                 }
                 player.shield -= asteroid.damage;
+                sfx['hit'].play();
             }
         });
 
@@ -407,7 +409,7 @@ let fadeToBlack = {
 // Game Loops
 function titleScreenUpdate(dt) {
     cls(0);
-    print('MISSING TITLE', pixelSize * 24, pixelSize * 32, 7, largeFont);
+    print('TITLE HERE', pixelSize * 24, pixelSize * 32, 7, largeFont);
     print('MOVE .... [A] or [D]', pixelSize * 24, pixelSize * 80, 7, mediumFont);
     print('START ... [X] or [C]', pixelSize * 24, pixelSize * 90, 7, mediumFont);
 
@@ -419,6 +421,7 @@ function titleScreenUpdate(dt) {
     if (btnp('x') || btnp('o')) {
         fadeToBlack.start(() => {
             init();
+            music['bgm'].play();
             stateUpdate = levelUpdate;
         });
     }
@@ -493,6 +496,11 @@ function load() {
     loadFontFamily('pico8', './fonts/pico8.ttf');
     setDefaultFont('pico8');
 
+    loadSFX('hit', './audio/hit.wav');
+    loadSFX('pickup', './audio/pickup.wav');
+    loadMusic('bgm', './audio/galacticknight.mp3');
+    music['bgm'].loop = true;
+
     loadSpriteSheet('player', './sprites/player.png', 1, 1);
     loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
     loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
@@ -523,10 +531,6 @@ function update(dt) {
     stateUpdate(dt);
 }
 /*
-        -- Road Map --
-- (1h) Deal with out of bounds left + right
-- (3h) Balance
-
     -- Feature Complete --
 
 - SFX
@@ -544,7 +548,6 @@ function update(dt) {
     // This will change once we have asteroids.
     // Space has no friction, fuel = cost to dodge
     // Running out of fuel relies on shield + luck to go over a fuel pickup
-
 - Portals, Levels & Recursion
 - Tutorialize Mechanic
 */
