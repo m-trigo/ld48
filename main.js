@@ -2,6 +2,7 @@
 const pixelSize = _hardware.defaultPixelScale;
 const marginSize = pixelSize * 4;
 
+// Debug Settings
 let freeControl = false;
 let visualDebug = true;
 
@@ -13,7 +14,7 @@ class Player {
     static maxFuel = 20;
     static startingFuel = Player.maxFuel / 2;
     static maxShield = 20;
-    static startingShield = Player.maxShield / 5;
+    static startingShield = Player.maxShield / 2;
     static baseFuelCost = 1;
     static screenY = 512 * 3/4;
     static oscilationAmplitude = pixelSize;
@@ -48,8 +49,8 @@ class Item {
 
     static fuelSpriteIndex = 0;
     static shieldSpriteIndex = 1;
-    static fuelRefillAmount = Player.maxFuel * 1/5;
-    static shieldRefillAmount = Player.maxShield * 1/5;
+    static fuelRefillAmount = 5;
+    static shieldRefillAmount = 5;
 
     constructor(type, x, y) {
         this.pos = new Vec(x, y);
@@ -112,43 +113,48 @@ class Asteroid {
     }
 };
 
+/*
+    Duration = 100
+    Max Fuel = 20
+    PickUp Refill = 4
+
+    Min Pickups = 20
+
+    Fuel Spots every... 5
+
+*/
 class Level {
 
     constructor() {
-        this.end = Player.travelSpeed * 25;
+        this.end = Player.travelSpeed * 100;
         this.complete = false;
-        this.fuels = [
-            new Item('fuel', 256 - pixelSize * 16, Player.travelSpeed * 4),
-            new Item('fuel', 300, Player.travelSpeed * 7),
-            new Item('fuel', 416, Player.travelSpeed * 8),
-        ];
-        this.shields = [
-            //new Item('shield', 384, Player.travelSpeed * 5),
-        ];
-        this.asteroids = [
-            new Asteroid(1, 128, Player.travelSpeed * 2),
-            new Asteroid(0, 384, Player.travelSpeed * 2.5),
-            new Asteroid(2, 256, Player.travelSpeed * 3),
-            new Asteroid(2, 156, Player.travelSpeed * 5),
-            new Asteroid(0, 156, Player.travelSpeed * 6),
-            new Asteroid(2, 384, Player.travelSpeed * 7),
-            new Asteroid(2, 128, Player.travelSpeed * 7.5),
-            new Asteroid(2, marginSize, Player.travelSpeed * 7),
-            new Asteroid(2, marginSize, Player.travelSpeed * 8),
-            new Asteroid(2, 256, Player.travelSpeed * 9),
-            new Asteroid(1, 384, Player.travelSpeed * 11),
-            new Asteroid(1, 128, Player.travelSpeed * 11),
-            new Asteroid(2, 256, Player.travelSpeed * 11.5),
-            new Asteroid(0, 128, Player.travelSpeed * 12),
-            new Asteroid(0, 256, Player.travelSpeed * 12),
-            new Asteroid(1, 384, Player.travelSpeed * 12.5),
-            new Asteroid(1, marginSize, Player.travelSpeed * 12.5),
-            new Asteroid(1, 256, Player.travelSpeed * 13),
-            new Asteroid(0, 384, Player.travelSpeed * 13),
-            new Asteroid(2, 128, Player.travelSpeed * 13.5),
-        ];
         player.pos = new Vec(256, 0);
         player.velocity = new Vec(0, Player.travelSpeed);
+
+        this.fuels = [];
+        this.shields = [];
+        this.asteroids = [];
+
+        for (let i = 0; i < 19; i++) {
+            let x = this.randomItemX();
+            let y = Player.travelSpeed * ( i + 1 ) * 5;
+            this.fuels.push(new Item('fuel', x, y));
+            if (i % 5 == 0) {
+                let x2 = 512 - x;
+                let y2 = Math.floor(Math.random() * 3 + 1) * Player.travelSpeed + y;
+                this.fuels.push(new Item('fuel', x2, y2));
+            }
+        }
+    }
+
+    randomItemX() {
+        let minX = marginSize + spriteSheet['items'].spriteWidth;
+        let maxX = 512 - minX;
+        let range = maxX - minX;
+        let x = Math.floor(Math.random() * (range + 1) + minX);
+        x = x - x % pixelSize;
+        console.assert(minX <= x && x <= maxX);
+        return x;
     }
 
     updatePlayer(dt) {
@@ -267,11 +273,11 @@ class Level {
 }
 
 // Variables
-let stateUpdate = titleScreenUpdate;
+let stateUpdate = levelUpdate;//titleScreenUpdate;
 let player = null;
 let level = null;
-let largeFont = { name: 'Courier New', size: 48, weight: '' };
-let mediumFont = { name: 'Courier New', size: 32, weight: '' };
+let largeFont = { name: 'pico8', size: 32, weight: '' };
+let mediumFont = { name: 'pico8', size: 16, weight: '' };
 
 // HUD
 let progressBar = {
@@ -473,6 +479,7 @@ function victoryUpdate(dt) {
 function load() {
     loadFontFamily('pico8', './fonts/pico8.ttf');
     setDefaultFont('pico8');
+
     loadSpriteSheet('player', './sprites/player.png', 1, 1);
     loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
     loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
