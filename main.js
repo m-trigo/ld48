@@ -33,6 +33,9 @@ class Player {
         this.elapsed += dt;
         let yOffset = Math.sin(this.elapsed * Player.oscilationSpeed) * Player.oscilationAmplitude;
         spriteSheet['player'].cspr(0, pos.x + pixelSize, pos.y - pixelSize + yOffset);
+
+        let rect = new Rect(pos, pixelSize, pixelSize);
+        rect.draw();
     }
 };
 
@@ -84,6 +87,37 @@ class Portal {
     }
 }
 
+class Asteroid {
+
+    constructor(x, y, index) {
+        this.pos = new Vec(x, y);
+        this.index = index;
+        this.speed = new Vec(0, 0);
+        this.destroyed = false;
+    }
+
+    get size() {
+        return [7, 11, 15][this.index] * pixelSize;
+    }
+
+    get damage() {
+        return this.index + 1;
+    }
+
+    draw(dt, pos) {
+        if (this.destroyed) {
+            return;
+        }
+
+        // Debug
+        let ctx = drawingContext();
+        ctx.strokeStyle = colors[14];
+        ctx.strokeRect(pos.x, pos.y, this.size, this.size);
+
+        spriteSheet['asteroids'].spr(this.index, pos.x, pos.y)
+    }
+};
+
 class Level {
     constructor(index) {
         this.index = index;
@@ -95,6 +129,11 @@ class Level {
         ];
         this.shields = [
             new Item('shield', 256, Player.travelSpeed * 5)
+        ];
+        this.asteroids = [
+            new Asteroid(256, Player.travelSpeed * 3, 0),
+            new Asteroid(156, Player.travelSpeed * 5, 1),
+            new Asteroid(256, Player.travelSpeed * 7, 2),
         ];
         player.pos = new Vec(screen().width / 2, 0);
         player.velocity = new Vec(0, Player.travelSpeed);
@@ -159,8 +198,21 @@ class Level {
             }
         });
 
-        this.complete = player.pos.y > this.end;
-        if (this.complete) {
+        this.asteroids.forEach(asteroid => {
+            if (asteroid.destroyed) {
+                return;
+            }
+
+            let xCollides = asteroid.pos.x <= player.pos.x && player.pos.x <= asteroid.pos.x + asteroid.size;
+            let yCollides = asteroid.pos.y - asteroid.size <= player.pos.y && player.pos.y <= asteroid.pos.y;
+            if (xCollides && yCollides) {
+                asteroid.destroyed = true;
+                player.shield -= asteroid.damage;
+            }
+        });
+
+        if (!this.complete && player.pos.y > this.end) {
+            this.complete = true;
             fadeToBlack.endCallback = () => {
                 fadeToBlack.endCallback = null;
                 fadeToBlack.start(true);
@@ -179,37 +231,12 @@ class Level {
 
     draw(dt) {
         print(`pos: (${Math.round(player.pos.x)}, ${Math.round(player.pos.y)})`, 0, 0, 7);
+        this.asteroids.forEach(asteroid => this.drawToScreen(dt, asteroid));
         this.fuels.concat(this.shields).forEach(fuel => this.drawToScreen(dt, fuel));
         this.drawToScreen(dt, this.finishLine);
         this.drawToScreen(dt, player);
     }
 }
-
-class Cloud {
-
-    constructor() {
-        this.x = 0;
-        this.y = 0;
-        this.speed = -512;
-        this.reset();
-    }
-
-    reset() {
-        this.x = Math.floor(Math.random() * (screen().width - spriteSheet['clouds'].spriteHeight));
-        this.y = Math.floor(screen().height + Math.floor(Math.random() * 100));
-    }
-
-    update(dt) {
-        this.y += this.speed * dt;
-        if (this.y < -spriteSheet['clouds'].spriteHeight) {
-            this.reset();
-        }
-    }
-
-    draw(dt) {
-        spriteSheet['clouds'].spr(0, this.x, this.y)
-    }
-};
 
 // Variables
 let stateUpdate = levelUpdate;//titleScreenUpdate;
@@ -412,6 +439,7 @@ function load() {
     loadSpriteSheet('progress-bar', './sprites/progress-bar.png', 1, 1);
     loadSpriteSheet('items', './sprites/items.png', 1, 2);
     loadSpriteSheet('finish-line', './sprites/finish-line.png', 1, 1);
+    loadSpriteSheet('asteroids', './sprites/asteroids.png', 1, 3);
 }
 
 function init() {
