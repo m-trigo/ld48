@@ -10,7 +10,7 @@ class Player {
     static maxFuel = 20;
     static startingFuel = Player.maxFuel;
     static maxShield = 20;
-    static startingShield = Player.maxShield / 2;
+    static startingShield = Player.maxShield / 5;
     static baseFuelCost = 1;
     static screenY = 512 * 3/4;
     static oscilationAmplitude = pixelSize;
@@ -207,6 +207,15 @@ class Level {
             let yCollides = asteroid.pos.y - asteroid.size <= player.pos.y && player.pos.y <= asteroid.pos.y;
             if (xCollides && yCollides) {
                 asteroid.destroyed = true;
+                if (player.shield > 0 && player.shield <= asteroid.damage) {
+                    debugger;
+                    fadeToBlack.endCallback = () => {
+                        fadeToBlack.endCallback = null;
+                        fadeToBlack.start(true);
+                        stateUpdate = gameOverUpdate;
+                    };
+                    fadeToBlack.start();
+                }
                 player.shield -= asteroid.damage;
             }
         });
@@ -465,13 +474,12 @@ function update(dt) {
 /*
         -- Road Map --
 
-- (3h) Add asteroids + shield
-- (1h) Fuel is only to doge!
 - (5h) Portals & Recursion
 - (1h) Deal with out of bounds left + right
 
     -- Feature Complete --
 
+- (1h) Fuel is only to dodge!
 - (3h) Tutorialize
 - (3h) Balance
 
