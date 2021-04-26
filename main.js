@@ -9,6 +9,8 @@ class Player {
     static travelSpeed = 128;
     static maxFuel = 20;
     static startingFuel = Player.maxFuel;
+    static maxShield = 20;
+    static startingShield = Player.maxShield / 2;
     static baseFuelCost = 1;
     static screenY = 512 * 3/4;
     static oscilationAmplitude = pixelSize;
@@ -23,7 +25,7 @@ class Player {
         this.velocity = Player.startingVelocity;
         this.elapsed = 0;
         this.fuel = Player.startingFuel;
-        this.shield = 20;
+        this.shield = Player.startingShield;
         this.state = 'idle';
     }
 
@@ -34,19 +36,32 @@ class Player {
     }
 };
 
-class Fuel {
+class Item {
 
-    constructor(x, y) {
+    static fuelSpriteIndex = 0;
+    static shieldSpriteIndex = 1;
+    static fuelRefillAmount = Player.maxFuel * 1/5;
+    static shieldRefillAmount = Player.maxShield * 1/5;
+
+    constructor(type, x, y) {
         this.pos = new Vec(x, y);
-        this.refillAmount = Player.maxFuel * 1/5;
+        this.type = type;
         this.pickedUp = false;
+    }
+
+    get refillAmount() {
+        return this.type == 'fuel' ? Item.fuelRefillAmount : Item.shieldRefillAmount;
+    }
+
+    get spriteIndex() {
+        return this.type == 'fuel' ? Item.fuelSpriteIndex : Item.shieldSpriteIndex;
     }
 
     draw(dt, pos) {
         if (this.pickedUp) {
             return;
         }
-        spriteSheet['items'].cspr(0, pos.x, pos.y);
+        spriteSheet['items'].cspr(this.spriteIndex, pos.x, pos.y);
     }
 }
 
@@ -72,11 +87,14 @@ class Portal {
 class Level {
     constructor(index) {
         this.index = index;
-        this.end = Player.travelSpeed * 3;//20;
+        this.end = Player.travelSpeed * 20;
         this.finishLine = new Portal('finish-line', new Vec(0, this.end), 512, 3);
         this.complete = false;
         this.fuels = [
-            new Fuel(256, Player.travelSpeed * 10)
+            new Item('fuel', 256, Player.travelSpeed * 10)
+        ];
+        this.shields = [
+            new Item('shield', 256, Player.travelSpeed * 5)
         ];
         player.pos = new Vec(screen().width / 2, 0);
         player.velocity = new Vec(0, Player.travelSpeed);
@@ -128,16 +146,16 @@ class Level {
 
     update(dt) {
         this.updatePlayer(dt);
-        this.fuels.forEach(fuel => {
-            if (fuel.pickedUp) {
+        this.fuels.concat(this.shields).forEach(item => {
+            if (item.pickedUp) {
                 return;
             }
             let spriteRange = spriteSheet['player'].spriteWidth / 2 + spriteSheet['items'].spriteWidth;
-            let xCollides = Math.abs(player.pos.x - fuel.pos.x) < spriteRange;
-            let yCollides = Math.abs(player.pos.y - fuel.pos.y) < spriteRange;
+            let xCollides = Math.abs(player.pos.x - item.pos.x) < spriteRange;
+            let yCollides = Math.abs(player.pos.y - item.pos.y) < spriteRange;
             if (xCollides && yCollides) {
-                player.fuel += fuel.refillAmount;
-                fuel.pickedUp = true;
+                player[item.type] += item.refillAmount;
+                item.pickedUp = true;
             }
         });
 
@@ -161,7 +179,7 @@ class Level {
 
     draw(dt) {
         print(`pos: (${Math.round(player.pos.x)}, ${Math.round(player.pos.y)})`, 0, 0, 7);
-        this.fuels.forEach(fuel => this.drawToScreen(dt, fuel));
+        this.fuels.concat(this.shields).forEach(fuel => this.drawToScreen(dt, fuel));
         this.drawToScreen(dt, this.finishLine);
         this.drawToScreen(dt, player);
     }
@@ -262,6 +280,22 @@ let fuelBar = {
     }
 }
 
+let shieldBar = {
+    draw(dt) {
+        let progress = Math.ceil(player.shield) / Player.maxShield;
+        progress = Math.min(progress, 1);
+        progress = Math.max(0, progress);
+
+        const barWidth = 80;
+        let width = barWidth * pixelSize * progress;
+        let x = 136;
+        let y = 452 + 7 * pixelSize;
+        let rect = new Rect(new Vec(x, y), width, pixelSize * 3);
+        rect.color = colors[11];
+        rect.draw();
+    }
+}
+
 let fadeToBlack = {
     elapsed: 0,
     duration: 2,
@@ -295,23 +329,7 @@ let fadeToBlack = {
     }
 }
 
-// Life Cycle
-function load() {
-    loadSpriteSheet('player', './sprites/player.png', 1, 1);
-    loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
-    loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
-    loadSpriteSheet('progress-bar', './sprites/progress-bar.png', 1, 1);
-    loadSpriteSheet('items', './sprites/items.png', 1, 1);
-    loadSpriteSheet('finish-line', './sprites/finish-line.png', 1, 1);
-}
-
-function init() {
-    //enableGrid(true);
-    player = new Player();
-    levels = [ new Level(0) ];
-    levelIndex = 0;
-}
-
+// Game Loops
 function titleScreenUpdate(dt) {
     cls(0);
     print('Game Title', pixelSize * 25, pixelSize * 25, 7, largeFont);
@@ -348,6 +366,7 @@ function levelUpdate(dt) {
 
     spriteSheet['hud-bars'].spr(0, marginSize, screen().height - marginSize - spriteSheet['hud-bars'].spriteHeight);
     fuelBar.draw(dt);
+    shieldBar.draw(dt);
 
     // Transitions
     fadeToBlack.draw(dt);
@@ -385,6 +404,23 @@ function victoryUpdate(dt) {
     }
 }
 
+// Life Cycle
+function load() {
+    loadSpriteSheet('player', './sprites/player.png', 1, 1);
+    loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
+    loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
+    loadSpriteSheet('progress-bar', './sprites/progress-bar.png', 1, 1);
+    loadSpriteSheet('items', './sprites/items.png', 1, 2);
+    loadSpriteSheet('finish-line', './sprites/finish-line.png', 1, 1);
+}
+
+function init() {
+    //enableGrid(true);
+    player = new Player();
+    levels = [ new Level(0) ];
+    levelIndex = 0;
+}
+
 function update(dt) {
     // Debug
     if (mouse.justPressed) {
@@ -398,7 +434,6 @@ function update(dt) {
     // Scene
     stateUpdate(dt);
 }
-
 /*
         -- Road Map --
 
