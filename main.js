@@ -10,7 +10,7 @@ class Player {
     static horizontalSpeed = 256;
     static travelSpeed = 128;
     static maxFuel = 20;
-    static startingFuel = Player.maxFuel / 4;
+    static startingFuel = Player.maxFuel / 2;
     static maxShield = 20;
     static startingShield = Player.maxShield / 5;
     static baseFuelCost = 1;
@@ -72,12 +72,12 @@ class Item {
 
 class Portal {
 
-    constructor(spriteSheetName, pos, width, height, event) {
+    constructor(spriteSheetName, pos, size, event) {
         this.pos = pos;
-        this.width = width;
-        this.height = height;
+        this.size = size;
         this.spriteSheetName = spriteSheetName;
         this.event = event;
+        this.eventFired = false;
     }
 
     get sprite() {
@@ -131,11 +131,18 @@ class Level {
         this.index = index;
         this.end = Player.travelSpeed * 20;
         this.complete = false;
-        this.portal = new Portal('portal', new Vec(marginSize, Player.travelSpeed * 10))
+        this.portal = new Portal('portal', new Vec(marginSize, Player.travelSpeed * 10), spriteSheet['portal'].spriteWidth)
         this.portal.event = () => {
-
+            if (!this.portal.eventFired) {
+                this.portal.eventFired = true;
+                let nextLevelTransition = new Transition([
+                    'SECTOR', 'B',
+                    'ENTROPY', 'LOW'
+                ], () => {});
+                fadeToBlack.start(() => stateUpdate = dt => nextLevelTransition.update(dt));
+            }
         }
-        this.finishLine = new Portal('finish-line', new Vec(0, this.end), 512, 3);
+        this.finishLine = new Portal('finish-line', new Vec(0, this.end));
         this.fuels = [
             new Item('fuel', 256 - pixelSize * 16, Player.travelSpeed * 4),
             new Item('fuel', 300, Player.travelSpeed * 7),
@@ -168,7 +175,7 @@ class Level {
             new Asteroid(0, 384, Player.travelSpeed * 13, 'R'),
             new Asteroid(2, 128, Player.travelSpeed * 13.5, 'S'),
         ];
-        player.pos = new Vec(screen().width / 2, 0);
+        player.pos = new Vec(screen().width / 2, Player.travelSpeed * (-2));
         player.velocity = new Vec(0, Player.travelSpeed);
         this.charCode = 65;
     }
@@ -229,8 +236,22 @@ class Level {
         player.state = 'idle';
     }
 
+    usingPortal() {
+        let xCollides = this.portal.pos.x <= player.pos.x && player.pos.x <= this.portal.pos.x + this.portal.size;
+        let yCollides = this.portal.pos.y - this.portal.size <= player.pos.y && player.pos.y <= this.portal.pos.y;
+        if (xCollides && yCollides) {
+            this.portal.event();
+            return true;
+        }
+
+        return false;
+    }
+
     update(dt) {
-        this.updatePlayer(dt);
+        if (!this.usingPortal()) {
+            this.updatePlayer(dt);
+        }
+
         this.fuels.concat(this.shields).forEach(item => {
             if (item.pickedUp) {
                 return;
@@ -334,13 +355,12 @@ class Transition {
 }
 
 // Variables
-let stateUpdate = titleScreenUpdate;
+let stateUpdate = levelUpdate;//titleScreenUpdate;
 let player = null;
 let levels = [];
 let levelIndex = 0;
 let largeFont = { name: 'Courier New', size: 48, weight: '' };
 let mediumFont = { name: 'Courier New', size: 32, weight: '' };
-
 
 // HUD
 let progressBar = {
@@ -472,7 +492,7 @@ function titleScreenUpdate(dt) {
             'SECTOR', 'A',
             'DEPTH', '0',
             'DANGER', 'LOW',
-            'SCRAPS', 'RARE',
+            'SCRAPS', 'NONE',
             'FUEL', 'RARE',
         ], () => fadeToBlack.start(() => {
             init();
