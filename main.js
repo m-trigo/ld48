@@ -3,6 +3,7 @@ const pixelSize = _hardware.defaultPixelScale;
 const marginSize = pixelSize * 4;
 
 let freeControl = false;
+let visualDebug = true;
 
 // Data Types
 class Player {
@@ -36,8 +37,10 @@ class Player {
         let yOffset = Math.sin(this.elapsed * Player.oscilationSpeed) * Player.oscilationAmplitude;
         spriteSheet['player'].cspr(0, pos.x + pixelSize, pos.y - pixelSize + yOffset);
 
-        // let rect = new Rect(pos, pixelSize, pixelSize);
-        // rect.draw();
+        if (visualDebug) {
+            let rect = new Rect(pos, pixelSize, pixelSize);
+            rect.draw();
+        }
     }
 };
 
@@ -70,33 +73,16 @@ class Item {
     }
 }
 
-class Portal {
-
-    constructor(spriteSheetName, pos, size, event) {
-        this.pos = pos;
-        this.size = size;
-        this.spriteSheetName = spriteSheetName;
-        this.event = event;
-        this.eventFired = false;
-    }
-
-    get sprite() {
-        return spriteSheet[this.spriteSheetName];
-    }
-
-    draw(dt, pos) {
-        this.sprite.spr(0, pos.x, pos.y);
-    }
-}
-
 class Asteroid {
 
-    constructor(index, x, y, label = '') {
+    static nextId = 0;
+
+    constructor(index, x, y) {
+        this.id = Asteroid.nextId++;
         this.pos = new Vec(x, y);
         this.index = index;
         this.speed = new Vec(0, 0);
         this.destroyed = false;
-        this.label = ''//label;
     }
 
     get size() {
@@ -112,15 +98,16 @@ class Asteroid {
             return;
         }
 
-        // Debug
-        // let ctx = drawingContext();
-        // ctx.strokeStyle = colors[14];
-        // ctx.strokeRect(pos.x, pos.y, this.size, this.size);
+        if (visualDebug) {
+            let ctx = drawingContext();
+            ctx.strokeStyle = colors[14];
+            ctx.strokeRect(pos.x, pos.y, this.size, this.size);
+        }
 
         spriteSheet['asteroids'].spr(this.index, pos.x, pos.y)
         if (this.label) {
             let labelPos = pos.add(new Vec(4,4).mult(-pixelSize));
-            print(this.label, labelPos.x, labelPos.y, 7);
+            print(this.id.toString(), labelPos.x, labelPos.y, 7);
         }
     }
 };
@@ -129,20 +116,8 @@ class Level {
 
     constructor(index) {
         this.index = index;
-        this.end = Player.travelSpeed * 20;
+        this.end = Player.travelSpeed * 10;
         this.complete = false;
-        this.portal = new Portal('portal', new Vec(marginSize, Player.travelSpeed * 10), spriteSheet['portal'].spriteWidth)
-        this.portal.event = () => {
-            if (!this.portal.eventFired) {
-                this.portal.eventFired = true;
-                let nextLevelTransition = new Transition([
-                    'SECTOR', 'B',
-                    'ENTROPY', 'LOW'
-                ], () => {});
-                fadeToBlack.start(() => stateUpdate = dt => nextLevelTransition.update(dt));
-            }
-        }
-        this.finishLine = new Portal('finish-line', new Vec(0, this.end));
         this.fuels = [
             new Item('fuel', 256 - pixelSize * 16, Player.travelSpeed * 4),
             new Item('fuel', 300, Player.travelSpeed * 7),
@@ -152,32 +127,29 @@ class Level {
             //new Item('shield', 384, Player.travelSpeed * 5),
         ];
         this.asteroids = [
-            new Asteroid(1, 128, Player.travelSpeed * 2, 'A'),
-            new Asteroid(0, 384, Player.travelSpeed * 2.5, 'b'),
-            new Asteroid(2, 256, Player.travelSpeed * 3, 'B'),
-            new Asteroid(2, 156, Player.travelSpeed * 5, 'C'),
-            new Asteroid(0, 156, Player.travelSpeed * 6, 'c'),
-            new Asteroid(2, 384, Player.travelSpeed * 7, 'D'),
-            new Asteroid(2, 128, Player.travelSpeed * 7.5, 'E'),
-            new Asteroid(2, marginSize, Player.travelSpeed * 7, 'F'),
-            new Asteroid(2, marginSize, Player.travelSpeed * 8, 'G'),
-            new Asteroid(2, 256, Player.travelSpeed * 9, 'H'),
-
-
-            new Asteroid(1, 384, Player.travelSpeed * 11, 'I'),
-            new Asteroid(1, 128, Player.travelSpeed * 11, 'J'),
-            new Asteroid(2, 256, Player.travelSpeed * 11.5, 'L'),
-            new Asteroid(0, 128, Player.travelSpeed * 12, 'M'),
-            new Asteroid(0, 256, Player.travelSpeed * 12, 'N'),
-            new Asteroid(1, 384, Player.travelSpeed * 12.5, 'O'),
-            new Asteroid(1, marginSize, Player.travelSpeed * 12.5, 'P'),
-            new Asteroid(1, 256, Player.travelSpeed * 13, 'Q'),
-            new Asteroid(0, 384, Player.travelSpeed * 13, 'R'),
-            new Asteroid(2, 128, Player.travelSpeed * 13.5, 'S'),
+            new Asteroid(1, 128, Player.travelSpeed * 2),
+            new Asteroid(0, 384, Player.travelSpeed * 2.5),
+            new Asteroid(2, 256, Player.travelSpeed * 3),
+            new Asteroid(2, 156, Player.travelSpeed * 5),
+            new Asteroid(0, 156, Player.travelSpeed * 6),
+            new Asteroid(2, 384, Player.travelSpeed * 7),
+            new Asteroid(2, 128, Player.travelSpeed * 7.5),
+            new Asteroid(2, marginSize, Player.travelSpeed * 7),
+            new Asteroid(2, marginSize, Player.travelSpeed * 8),
+            new Asteroid(2, 256, Player.travelSpeed * 9),
+            new Asteroid(1, 384, Player.travelSpeed * 11),
+            new Asteroid(1, 128, Player.travelSpeed * 11),
+            new Asteroid(2, 256, Player.travelSpeed * 11.5),
+            new Asteroid(0, 128, Player.travelSpeed * 12),
+            new Asteroid(0, 256, Player.travelSpeed * 12),
+            new Asteroid(1, 384, Player.travelSpeed * 12.5),
+            new Asteroid(1, marginSize, Player.travelSpeed * 12.5),
+            new Asteroid(1, 256, Player.travelSpeed * 13),
+            new Asteroid(0, 384, Player.travelSpeed * 13),
+            new Asteroid(2, 128, Player.travelSpeed * 13.5),
         ];
-        player.pos = new Vec(screen().width / 2, Player.travelSpeed * (-2));
+        player.pos = new Vec(256, 0);
         player.velocity = new Vec(0, Player.travelSpeed);
-        this.charCode = 65;
     }
 
     updatePlayer(dt) {
@@ -221,9 +193,6 @@ class Level {
             player.fuel = Math.max(player.fuel - dt, 0);
         }
         else {
-            // This will change once we have asteroids.
-            // Space has no friction, fuel = cost to dodge
-            // Running out of fuel relies on shield + luck to go over a fuel pickup
             player.velocity.y -= player.velocity.y * Player.accelerationFactor * 0.1 * dt;
             if (Math.abs(player.velocity.y) < pixelSize && player.velocity.y > 0) {
                 player.velocity.y = 0;
@@ -236,21 +205,8 @@ class Level {
         player.state = 'idle';
     }
 
-    usingPortal() {
-        let xCollides = this.portal.pos.x <= player.pos.x && player.pos.x <= this.portal.pos.x + this.portal.size;
-        let yCollides = this.portal.pos.y - this.portal.size <= player.pos.y && player.pos.y <= this.portal.pos.y;
-        if (xCollides && yCollides) {
-            this.portal.event();
-            return true;
-        }
-
-        return false;
-    }
-
     update(dt) {
-        if (!this.usingPortal()) {
-            this.updatePlayer(dt);
-        }
+        this.updatePlayer(dt);
 
         this.fuels.concat(this.shields).forEach(item => {
             if (item.pickedUp) {
@@ -296,10 +252,17 @@ class Level {
 
     draw(dt) {
         //print(`pos: (${Math.round(player.pos.x)}, ${Math.round(player.pos.y)})`, 0, 0, 7);
+
+        // Finish Line
+        this.drawToScreen(dt, {
+            pos: new Vec(0, this.end),
+            draw(dt, pos) {
+                spriteSheet['finish-line'].spr(0, pos.x, pos.y)
+            }
+        });
+
         this.asteroids.forEach(asteroid => this.drawToScreen(dt, asteroid));
         this.fuels.concat(this.shields).forEach(fuel => this.drawToScreen(dt, fuel));
-        this.drawToScreen(dt, this.finishLine);
-        this.drawToScreen(dt, this.portal);
         this.drawToScreen(dt, player);
     }
 }
@@ -607,24 +570,27 @@ function update(dt) {
 }
 /*
         -- Road Map --
-
-- (5h) Portals & Recursion
 - (1h) Deal with out of bounds left + right
+- (3h) Balance
 
     -- Feature Complete --
 
-- (1h) Fuel is only to dodge!
-- (3h) Tutorialize
-- (3h) Balance
-
-- (2h) Animations
-- (2h) SFX
-- (1h) Screen shake
-- (1h) Polish HUD (flashing animations, shake animations)
-
+- SFX
+- Screen shake
+- Animations
+- Polish HUD (flashing animations, shake animations)
 - Music
-
 - Title Screen
 - Victory Screen
 - Game Over Screen
+
+    -- Post Jam --
+
+- Fuel is only to dodge!
+    // This will change once we have asteroids.
+    // Space has no friction, fuel = cost to dodge
+    // Running out of fuel relies on shield + luck to go over a fuel pickup
+
+- Portals, Levels & Recursion
+- Tutorialize Mechanic
 */
