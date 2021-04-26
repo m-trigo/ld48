@@ -50,15 +50,34 @@ class Fuel {
     }
 }
 
+class Portal {
+
+    constructor(spriteSheetName, pos, width, height, event) {
+        this.pos = pos;
+        this.width = width;
+        this.height = height;
+        this.spriteSheetName = spriteSheetName;
+        this.event = event;
+    }
+
+    get sprite() {
+        return spriteSheet[this.spriteSheetName];
+    }
+
+    draw(dt, pos) {
+        this.sprite.spr(0, pos.x, pos.y);
+    }
+}
+
 class Level {
     constructor(index) {
         this.index = index;
-        this.end = Player.travelSpeed * 20;
+        this.end = Player.travelSpeed * 3;//20;
+        this.finishLine = new Portal('finish-line', new Vec(0, this.end), 512, 3);
+        this.complete = false;
         this.fuels = [
             new Fuel(256, Player.travelSpeed * 10)
         ];
-
-
         player.pos = new Vec(screen().width / 2, 0);
         player.velocity = new Vec(0, Player.travelSpeed);
     }
@@ -104,11 +123,6 @@ class Level {
         }
 
         player.pos = player.pos.add(player.velocity.mult(dt));
-
-        if (isNaN(player.pos.x) || isNaN(player.pos.y)) {
-            debugger;
-        }
-
         player.state = 'idle';
     }
 
@@ -126,6 +140,16 @@ class Level {
                 fuel.pickedUp = true;
             }
         });
+
+        this.complete = player.pos.y > this.end;
+        if (this.complete) {
+            fadeToBlack.endCallback = () => {
+                fadeToBlack.endCallback = null;
+                fadeToBlack.start(true);
+                stateUpdate = victoryUpdate;
+            };
+            fadeToBlack.start();
+        }
     }
 
     drawToScreen(dt, obj) {
@@ -138,7 +162,8 @@ class Level {
     draw(dt) {
         print(`pos: (${Math.round(player.pos.x)}, ${Math.round(player.pos.y)})`, 0, 0, 7);
         this.fuels.forEach(fuel => this.drawToScreen(dt, fuel));
-        this.drawToScreen(dt, player)
+        this.drawToScreen(dt, this.finishLine);
+        this.drawToScreen(dt, player);
     }
 }
 
@@ -169,10 +194,12 @@ class Cloud {
 };
 
 // Variables
-let stateUpdate = titleScreenUpdate;
+let stateUpdate = levelUpdate;//titleScreenUpdate;
 let player = null;
 let levels = [];
 let levelIndex = 0;
+let largeFont = { name: 'Courier New', size: 48, weight: '' };
+let mediumFont = { name: 'Courier New', size: 32, weight: '' };
 
 // HUD
 let progressBar = {
@@ -275,23 +302,24 @@ function load() {
     loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
     loadSpriteSheet('progress-bar', './sprites/progress-bar.png', 1, 1);
     loadSpriteSheet('items', './sprites/items.png', 1, 1);
+    loadSpriteSheet('finish-line', './sprites/finish-line.png', 1, 1);
 }
 
 function init() {
     //enableGrid(true);
     player = new Player();
     levels = [ new Level(0) ];
+    levelIndex = 0;
 }
 
 function titleScreenUpdate(dt) {
     cls(0);
-    let font = { name: 'Courier New', size: 48, weight: '' };
-    print('Game Title', pixelSize * 25, pixelSize * 25, 7, font);
-    font.size = 32;
-    print('Move .... [A] or [D]', pixelSize * 18, pixelSize * 80, 7, font);
-    print('Start ... [X] or [C]', pixelSize * 18, pixelSize * 90, 7, font);
+    print('Game Title', pixelSize * 25, pixelSize * 25, 7, largeFont);
+    print('Move .... [A] or [D]', pixelSize * 18, pixelSize * 80, 7, mediumFont);
+    print('Start ... [X] or [C]', pixelSize * 18, pixelSize * 90, 7, mediumFont);
 
     if (btnp('x') || btnp('o')) {
+        init();
         stateUpdate = levelUpdate;
     }
 }
@@ -327,7 +355,7 @@ function levelUpdate(dt) {
 
 function gameOverUpdate(dt) {
     cls(0);
-    print('Game Over', 200, 260, 7);
+    print('Game Over', pixelSize * 30, pixelSize * 50, 7, largeFont);
 
     // Transitions
     fadeToBlack.draw(dt);
@@ -342,7 +370,19 @@ function gameOverUpdate(dt) {
 }
 
 function victoryUpdate(dt) {
+    cls(0);
+    print('You win', pixelSize * 30, pixelSize * 50, 7, largeFont);
 
+    // Transitions
+    fadeToBlack.draw(dt);
+
+    if (fadeToBlack.active) {
+        return;
+    }
+
+    if (btnp('x') || btnp('o')) {
+        stateUpdate = titleScreenUpdate;
+    }
 }
 
 function update(dt) {
@@ -360,15 +400,25 @@ function update(dt) {
 }
 
 /*
-- Reach end (Win Condition)
-- Out of fuel (Lose Condition)
+        -- Road Map --
 
-- Deal with out of bounds left + right
+- (3h) Add asteroids + shield
+- (1h) Fuel is only to doge!
+- (5h) Portals & Recursion
+- (1h) Deal with out of bounds left + right
 
-- Portals & Recursion
+    -- Feature Complete --
 
-- Add asteroids + shield
-- Fuel is only to doge!
-- Balance and polish
+- (3h) Tutorialize
+- (3h) Balance
 
+- (2h) SFX
+- (1h) Screen shake
+- (1h) Polish HUD (flashing animations, shake animations)
+
+- Music
+
+- Title Screen
+- Victory Screen
+- Game Over Screen
 */
