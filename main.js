@@ -142,7 +142,7 @@ class Level {
 
         for (let i = 20; i <= 80; i += 20) {
             let x = this.randomItemX();
-            let y = Player.travelSpeed * i;
+            let y = Player.travelSpeed * (i + Math.floor(Math.random() * 5 - 2));
             this.shields.push(new Item('shield', x, y));
         }
 
