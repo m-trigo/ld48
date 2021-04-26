@@ -186,12 +186,12 @@ let btns = {
     o: { pressed: false, repeat: false, keys: ['C']  }
 };
 
-function btn(btn) {
-    return btns[btn].pressed;
+function btn(buttonKey) {
+    return btns[buttonKey].pressed;
 }
 
-function btnp(btn) {
-    return btns[btn].pressed && !btns[btn].repeat;
+function btnp(buttonKey) {
+    return btns[buttonKey].pressed && !btns[buttonKey].repeat;
 }
 
 let mouse = {
