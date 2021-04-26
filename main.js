@@ -152,7 +152,7 @@ class Level {
         let minX = marginSize + spriteSheet['items'].spriteWidth;
         let maxX = 512 - minX;
         let range = maxX - minX;
-        let x = Math.floor(Math.random() * (range + 1) + minX);
+        let x = Math.floor(Math.sin(Math.random()) * (range + 1) + minX);
         x = x - x % pixelSize;
         console.assert(minX <= x && x <= maxX);
         return x;
@@ -208,6 +208,7 @@ class Level {
         }
 
         player.pos = player.pos.add(player.velocity.mult(dt));
+        player.pos.x = Math.max(Math.min(player.pos.x, 512 - marginSize), marginSize);
         player.state = 'idle';
     }
 
@@ -278,7 +279,7 @@ class Level {
 }
 
 // Variables
-let stateUpdate = titleScreenUpdate;
+let stateUpdate = victoryUpdate//titleScreenUpdate;
 let player = null;
 let level = null;
 let largeFont = { name: 'pico8', size: 32, weight: '' };
@@ -400,7 +401,7 @@ let fadeToBlack = {
 // Game Loops
 function titleScreenUpdate(dt) {
     cls(0);
-    print('Game Title', pixelSize * 24, pixelSize * 32, 7, largeFont);
+    print('MISSING TITLE', pixelSize * 24, pixelSize * 32, 7, largeFont);
     print('MOVE .... [A] or [D]', pixelSize * 24, pixelSize * 80, 7, mediumFont);
     print('START ... [X] or [C]', pixelSize * 24, pixelSize * 90, 7, mediumFont);
 
@@ -448,7 +449,7 @@ function levelUpdate(dt) {
 
 function gameOverUpdate(dt) {
     cls(0);
-    print('Game Over', pixelSize * 30, pixelSize * 50, 7, largeFont);
+    print('GAME OVER', pixelSize * 30, pixelSize * 50, 7, largeFont);
 
     // Transitions
     fadeToBlack.draw(dt);
@@ -465,7 +466,8 @@ function gameOverUpdate(dt) {
 
 function victoryUpdate(dt) {
     cls(0);
-    print('You win', pixelSize * 30, pixelSize * 50, 7, largeFont);
+    print('THANK YOU', pixelSize * 30, pixelSize * 50, 7, largeFont);
+    print('FOR PLAYING!', pixelSize * 20, pixelSize * 70, 7, largeFont);
 
     // Transitions
     fadeToBlack.draw(dt);
