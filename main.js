@@ -2,7 +2,7 @@
 const pixelSize = _hardware.defaultPixelScale;
 const marginSize = pixelSize * 4;
 
-let freeControl = true;
+let freeControl = false;
 
 // Data Types
 class Player {
@@ -36,8 +36,8 @@ class Player {
         let yOffset = Math.sin(this.elapsed * Player.oscilationSpeed) * Player.oscilationAmplitude;
         spriteSheet['player'].cspr(0, pos.x + pixelSize, pos.y - pixelSize + yOffset);
 
-        let rect = new Rect(pos, pixelSize, pixelSize);
-        rect.draw();
+        // let rect = new Rect(pos, pixelSize, pixelSize);
+        // rect.draw();
     }
 };
 
@@ -96,7 +96,7 @@ class Asteroid {
         this.index = index;
         this.speed = new Vec(0, 0);
         this.destroyed = false;
-        this.label = label;
+        this.label = ''//label;
     }
 
     get size() {
@@ -113,13 +113,13 @@ class Asteroid {
         }
 
         // Debug
-        let ctx = drawingContext();
-        ctx.strokeStyle = colors[14];
-        ctx.strokeRect(pos.x, pos.y, this.size, this.size);
+        // let ctx = drawingContext();
+        // ctx.strokeStyle = colors[14];
+        // ctx.strokeRect(pos.x, pos.y, this.size, this.size);
 
         spriteSheet['asteroids'].spr(this.index, pos.x, pos.y)
         if (this.label) {
-            let labelPos = pos.add(new Vec(2,2).mult(-pixelSize));
+            let labelPos = pos.add(new Vec(4,4).mult(-pixelSize));
             print(this.label, labelPos.x, labelPos.y, 7);
         }
     }
@@ -132,20 +132,24 @@ class Level {
         this.end = Player.travelSpeed * 20;
         this.complete = false;
         this.portal = new Portal('portal', new Vec(marginSize, Player.travelSpeed * 10))
+        this.portal.event = () => {
+
+        }
         this.finishLine = new Portal('finish-line', new Vec(0, this.end), 512, 3);
         this.fuels = [
             new Item('fuel', 256 - pixelSize * 16, Player.travelSpeed * 4),
-            new Item('fuel', 256, Player.travelSpeed * 6),
-            new Item('fuel', 384, Player.travelSpeed * 8),
-            new Item('fuel', 384, Player.travelSpeed * 10)
+            new Item('fuel', 300, Player.travelSpeed * 7),
+            new Item('fuel', 416, Player.travelSpeed * 8),
         ];
         this.shields = [
-            new Item('shield', 384, Player.travelSpeed * 5),
+            //new Item('shield', 384, Player.travelSpeed * 5),
         ];
         this.asteroids = [
-            new Asteroid(2, 256, Player.travelSpeed * 3, 'A'),
-            new Asteroid(1, 128, Player.travelSpeed * 2, 'B'),
+            new Asteroid(1, 128, Player.travelSpeed * 2, 'A'),
+            new Asteroid(0, 384, Player.travelSpeed * 2.5, 'b'),
+            new Asteroid(2, 256, Player.travelSpeed * 3, 'B'),
             new Asteroid(2, 156, Player.travelSpeed * 5, 'C'),
+            new Asteroid(0, 156, Player.travelSpeed * 6, 'c'),
             new Asteroid(2, 384, Player.travelSpeed * 7, 'D'),
             new Asteroid(2, 128, Player.travelSpeed * 7.5, 'E'),
             new Asteroid(2, marginSize, Player.travelSpeed * 7, 'F'),
@@ -153,16 +157,16 @@ class Level {
             new Asteroid(2, 256, Player.travelSpeed * 9, 'H'),
 
 
-            new Asteroid(2, 256, Player.travelSpeed * 11, 'I'),
+            new Asteroid(1, 384, Player.travelSpeed * 11, 'I'),
             new Asteroid(1, 128, Player.travelSpeed * 11, 'J'),
             new Asteroid(2, 256, Player.travelSpeed * 11.5, 'L'),
             new Asteroid(0, 128, Player.travelSpeed * 12, 'M'),
             new Asteroid(0, 256, Player.travelSpeed * 12, 'N'),
             new Asteroid(1, 384, Player.travelSpeed * 12.5, 'O'),
-            new Asteroid(1, 128, Player.travelSpeed * 13, 'P'),
+            new Asteroid(1, marginSize, Player.travelSpeed * 12.5, 'P'),
             new Asteroid(1, 256, Player.travelSpeed * 13, 'Q'),
             new Asteroid(0, 384, Player.travelSpeed * 13, 'R'),
-            new Asteroid(2, 256, Player.travelSpeed * 13.5, 'S'),
+            new Asteroid(2, 128, Player.travelSpeed * 13.5, 'S'),
         ];
         player.pos = new Vec(screen().width / 2, 0);
         player.velocity = new Vec(0, Player.travelSpeed);
@@ -216,12 +220,7 @@ class Level {
             player.velocity.y -= player.velocity.y * Player.accelerationFactor * 0.1 * dt;
             if (Math.abs(player.velocity.y) < pixelSize && player.velocity.y > 0) {
                 player.velocity.y = 0;
-                fadeToBlack.endCallback = () => {
-                    fadeToBlack.endCallback = null;
-                    fadeToBlack.start(true);
-                    stateUpdate = gameOverUpdate;
-                };
-                fadeToBlack.start();
+                fadeToBlack.start(() => stateUpdate = gameOverUpdate);
             }
             player.velocity.x = 0;
         }
@@ -255,12 +254,7 @@ class Level {
             if (xCollides && yCollides) {
                 asteroid.destroyed = true;
                 if (player.shield > 0 && player.shield <= asteroid.damage) {
-                    fadeToBlack.endCallback = () => {
-                        fadeToBlack.endCallback = null;
-                        fadeToBlack.start(true);
-                        stateUpdate = gameOverUpdate;
-                    };
-                    fadeToBlack.start();
+                    fadeToBlack.start(() => stateUpdate = gameOverUpdate);
                 }
                 player.shield -= asteroid.damage;
             }
@@ -268,12 +262,7 @@ class Level {
 
         if (!this.complete && player.pos.y > this.end) {
             this.complete = true;
-            fadeToBlack.endCallback = () => {
-                fadeToBlack.endCallback = null;
-                fadeToBlack.start(true);
-                stateUpdate = victoryUpdate;
-            };
-            fadeToBlack.start();
+            fadeToBlack.start(() => stateUpdate = victoryUpdate);
         }
     }
 
@@ -285,7 +274,7 @@ class Level {
     }
 
     draw(dt) {
-        print(`pos: (${Math.round(player.pos.x)}, ${Math.round(player.pos.y)})`, 0, 0, 7);
+        //print(`pos: (${Math.round(player.pos.x)}, ${Math.round(player.pos.y)})`, 0, 0, 7);
         this.asteroids.forEach(asteroid => this.drawToScreen(dt, asteroid));
         this.fuels.concat(this.shields).forEach(fuel => this.drawToScreen(dt, fuel));
         this.drawToScreen(dt, this.finishLine);
@@ -294,13 +283,64 @@ class Level {
     }
 }
 
+class Transition {
+
+    constructor(messages, callback) {
+        this.index = 0;
+        this.elapsed = 0;
+        this.speed = 20;
+        this.messages = messages;
+        this.callback = callback;
+    }
+
+    update(dt) {
+        this.elapsed += dt;
+
+        cls(0);
+
+        for (let i = 0; i <= this.index; i++) {
+            let message = this.messages[i];
+            let x = pixelSize * 8;
+            if (i % 2 != 0) {
+                x = 512 - x - message.length * 4 * pixelSize;
+            }
+
+            if (i < this.index ) {
+                print(message, x, (Math.floor(i/2) + 4) * pixelSize * 8, 7);
+            }
+            else {
+                let endIndex = Math.floor(this.elapsed * this.speed);
+                endIndex = Math.min(endIndex, message.length);
+                let section = message.substr(0, endIndex);
+                print(section, x, (Math.floor(i/2) + 4) * pixelSize * 8, 7);
+            }
+        }
+
+        fadeToBlack.draw(dt);
+        if (fadeToBlack.active) {
+            //return;
+        }
+
+        if ((btnp('x') || btnp('o'))) {
+            if (this.index < this.messages.length - 1) {
+                this.index++;
+                this.elapsed = 0;
+            }
+            else {
+                this.callback(); // make sure to activate fade-to-black
+            }
+        }
+    }
+}
+
 // Variables
-let stateUpdate = levelUpdate;//titleScreenUpdate;
+let stateUpdate = titleScreenUpdate;
 let player = null;
 let levels = [];
 let levelIndex = 0;
 let largeFont = { name: 'Courier New', size: 48, weight: '' };
 let mediumFont = { name: 'Courier New', size: 32, weight: '' };
+
 
 // HUD
 let progressBar = {
@@ -387,10 +427,11 @@ let fadeToBlack = {
     area: new Rect(new Vec(0, 0), 512, 512),
     endCallback: null,
 
-    start(reverse = false) {
+    start(endCallback, reverse = false) {
         if (!this.active) {
-            this.active = true;
+            this.endCallback = endCallback;
             this.elapsed = 0;
+            this.active = true;
             this.reverse = reverse;
         }
     },
@@ -407,6 +448,8 @@ let fadeToBlack = {
             this.active = false;
             if (this.endCallback) {
                 this.endCallback();
+                this.reverse = true;
+                fadeToBlack.start(null, true);
             }
         }
     }
@@ -419,10 +462,30 @@ function titleScreenUpdate(dt) {
     print('Move .... [A] or [D]', pixelSize * 18, pixelSize * 80, 7, mediumFont);
     print('Start ... [X] or [C]', pixelSize * 18, pixelSize * 90, 7, mediumFont);
 
-    if (btnp('x') || btnp('o')) {
-        init();
-        stateUpdate = levelUpdate;
+    fadeToBlack.draw(dt);
+    if (fadeToBlack.active) {
+        return;
     }
+
+    if (btnp('x') || btnp('o')) {
+        let titleToLevelTransition = new Transition([
+            'SECTOR', 'A',
+            'DEPTH', '0',
+            'DANGER', 'LOW',
+            'SCRAPS', 'RARE',
+            'FUEL', 'RARE',
+        ], () => fadeToBlack.start(() => {
+            init();
+            stateUpdate = levelUpdate;
+        }));
+        fadeToBlack.start(() => {
+            stateUpdate = dt => titleToLevelTransition.update(dt);
+        })
+    }
+}
+
+function titleToLevelTransitionUpdate(dt) {
+    titleToLevelTransition.update(dt);
 }
 
 function levelUpdate(dt) {
@@ -461,7 +524,6 @@ function gameOverUpdate(dt) {
 
     // Transitions
     fadeToBlack.draw(dt);
-
     if (fadeToBlack.active) {
         return;
     }
@@ -477,7 +539,6 @@ function victoryUpdate(dt) {
 
     // Transitions
     fadeToBlack.draw(dt);
-
     if (fadeToBlack.active) {
         return;
     }
@@ -489,6 +550,10 @@ function victoryUpdate(dt) {
 
 // Life Cycle
 function load() {
+
+    loadFontFamily('pico8', './fonts/pico8.ttf');
+    setDefaultFont('pico8');
+
     loadSpriteSheet('player', './sprites/player.png', 1, 1);
     loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
     loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
@@ -504,6 +569,7 @@ function init() {
     player = new Player();
     levels = [ new Level(0) ];
     levelIndex = 0;
+
 }
 
 function update(dt) {
