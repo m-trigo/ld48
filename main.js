@@ -409,7 +409,12 @@ let fadeToBlack = {
 // Game Loops
 function titleScreenUpdate(dt) {
     cls(0);
-    print('TITLE HERE', pixelSize * 24, pixelSize * 32, 7, largeFont);
+    print('EDGE', pixelSize * 23, pixelSize * 24, 6, largeFont);
+    print('EDGE', pixelSize * 24, pixelSize * 24, 7, largeFont);
+    print('OF', pixelSize * 23, pixelSize * (24 + 16), 6, largeFont);
+    print('OF', pixelSize * 24, pixelSize * (24 + 16), 7, largeFont);
+    print('RECURSION', pixelSize * 23, pixelSize * (24 + 32), 6, largeFont);
+    print('RECURSION', pixelSize * 24, pixelSize * (24 + 32), 7, largeFont);
     print('MOVE .... [A] or [D]', pixelSize * 24, pixelSize * 80, 7, mediumFont);
     print('START ... [X] or [C]', pixelSize * 24, pixelSize * 90, 7, mediumFont);
 
@@ -524,7 +529,7 @@ function update(dt) {
         x = x - x % pixelSize;
         let y = Math.floor(mouse.position.y);
         y = y - y % pixelSize;
-        console.log({x, y});
+        //console.log({x, y});
     }
 
     // Scene
