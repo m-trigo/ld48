@@ -409,6 +409,9 @@ let fadeToBlack = {
 // Game Loops
 function titleScreenUpdate(dt) {
     cls(0);
+
+    spriteSheet['title-screen-frame'].spr(0, 0, 0);
+
     print('EDGE', pixelSize * 23, pixelSize * 24, 6, largeFont);
     print('EDGE', pixelSize * 24, pixelSize * 24, 7, largeFont);
     print('OF', pixelSize * 23, pixelSize * (24 + 16), 6, largeFont);
@@ -461,8 +464,14 @@ function levelUpdate(dt) {
     fadeToBlack.draw(dt);
 }
 
+function anyDirectionPressed() {
+    return btnp('up') || btnp('down') || btnp('left') || btnp('right');
+}
+
 function gameOverUpdate(dt) {
     cls(0);
+
+    spriteSheet['title-screen-frame'].spr(0, 0, 0);
     print('GAME OVER', pixelSize * 30, pixelSize * 50, 7, largeFont);
 
     // Transitions
@@ -471,7 +480,7 @@ function gameOverUpdate(dt) {
         return;
     }
 
-    if (btnp('x') || btnp('o')) {
+    if (btnp('x') || btnp('o') || anyDirectionPressed()) {
         fadeToBlack.start(() => {
             stateUpdate = titleScreenUpdate;
         });
@@ -480,6 +489,8 @@ function gameOverUpdate(dt) {
 
 function victoryUpdate(dt) {
     cls(0);
+
+    spriteSheet['title-screen-frame'].spr(0, 0, 0);
     print('THANK YOU', pixelSize * 30, pixelSize * 50, 7, largeFont);
     print('FOR PLAYING!', pixelSize * 20, pixelSize * 70, 7, largeFont);
 
@@ -489,7 +500,7 @@ function victoryUpdate(dt) {
         return;
     }
 
-    if (btnp('x') || btnp('o')) {
+    if (btnp('x') || btnp('o') || anyDirectionPressed()) {
         fadeToBlack.start(() => {
             stateUpdate = titleScreenUpdate;
         });
@@ -504,6 +515,7 @@ function load() {
     loadSFX('hit', './audio/hit.wav');
     loadSFX('pickup', './audio/pickup.wav');
     loadMusic('bgm', './audio/galacticknight.mp3');
+
     music['bgm'].loop = true;
 
     loadSpriteSheet('player', './sprites/player.png', 1, 1);
@@ -514,6 +526,7 @@ function load() {
     loadSpriteSheet('finish-line', './sprites/finish-line.png', 1, 1);
     loadSpriteSheet('asteroids', './sprites/asteroids.png', 1, 3);
     loadSpriteSheet('portal', './sprites/portal.png', 1, 1);
+    loadSpriteSheet('title-screen-frame', './sprites/title-screen-frame.png', 1, 1);
 }
 
 function init() {
