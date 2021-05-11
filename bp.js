@@ -465,6 +465,8 @@ function main() {
 
 /*
 TODO:
-	- Add the ability to screen shake
+	- Add the ability to screen shake (create Camera object?)
+    - Move fade-in/fade-out into the library
+    - Add a "Sequence" feature for
 	- Add built-in PAUSE and FRAME ADVANCE features for debugging
 */
