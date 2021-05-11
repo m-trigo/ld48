@@ -470,5 +470,10 @@ function main() {
 }
 
 /*
-TODO: Replace line drawins with rectangle drawins whenever possible.
+TODO:
+	- Fix screenshots
+	- Replace line drawgins with rectangle drawings whenever possible
+	- Double back on the Vec and Rect classes
+	- Add the ability to screen shake
+	- Add built-in PAUSE and FRAME ADVANCE features for debugging
 */
