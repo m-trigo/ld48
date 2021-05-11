@@ -1,8 +1,30 @@
 /* Hardware */
 let _hardware = {
+
+    /* Screen */
     width : 512,
     height: 512,
-    canvas: () => document.getElementById('canvas'),
+
+    canvas: function() {
+        return document.getElementById('canvas')
+    },
+
+    context: function () {
+        let ctx = this.canvas().getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        return ctx;
+    },
+
+    coord: function (x, y) {
+        let rect = this.canvas().getBoundingClientRect();
+        let xScale = this.canvas().width / rect.width;
+        let yScale = this.canvas().height / rect.height;
+        x = (x - rect.left) * xScale;
+        y = (y - rect.top) * yScale;
+        return { x, y };
+    },
+
+    /* Input */
     input: {
         mouse: {
             x: 0,
@@ -10,34 +32,26 @@ let _hardware = {
             pressed: false
         }
     },
-    coord: function (x, y) {
-        let rect = this.canvas().getBoundingClientRect();
-        let xScale = this.canvas().width / rect.width;
-        let yScale = this.canvas().height / rect.height;
-        x = (x - rect.left) * xScale;
-        y = (y - rect.top) * yScale;
-        return new Vec(x, y);
-    },
+
+    /* Time */
+    elapsed: 0,
     lastUpdate: null,
-    context: () => {
-        let ctx = this.canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
-        return ctx;
-    },
+    lastSecondTimestamps: [],
+
+    /* Defaults */
     defaultFont: {
         name: 'Courier New',
         size: 16,
         weight: ''
     },
-    elapsed: 0,
-    lastSecondTimestamps: [],
+
+    /* Debug */
     displayFPS: false,
     pixelGrid: {
         display: false,
         size: 4,
         color: 7
-    },
-    defaultPixelScale: 4
+    }
 }
 
 /* Debug */
@@ -47,15 +61,6 @@ function FPS(on) {
 
 function enableGrid(display, size = _hardware.pixelGrid.size, color = _hardware.pixelGrid.color) {
     _hardware.pixelGrid = { display, size, color };
-}
-
-let captures = [];
-function screenCapture() {
-    captures.push(_hardware.canvas().toDataURL());
-}
-
-function showCaptures() {
-    captures.forEach(cap => window.open(cap, '_blank'));
 }
 
 /* Utility */
@@ -86,6 +91,7 @@ class Vec {
     }
 }
 
+// TODO: Modify to use (start, end) which is not orientation dependent
 class Rect {
 
     constructor(start, width, height) {
@@ -151,31 +157,6 @@ class StepAnimation {
     }
 }
 
-/* Environment */
-function screen() {
-    return {
-        get width() {
-            return _hardware.canvas().width;
-        },
-
-        get height() {
-            return _hardware.canvas().height;
-        },
-
-        get start() {
-            return new Vec();
-        },
-
-        get end() {
-            return new Vec(this.width, this.height);
-        },
-
-        get center() {
-            return this.end.sub(this.start).div(2);
-        }
-    };
-}
-
 /* Input */
 let btns = {
     up: { pressed: false, repeat: false, keys: ['Up', 'ArrowUp', 'W'] },
@@ -186,6 +167,14 @@ let btns = {
     o: { pressed: false, repeat: false, keys: ['C']  }
 };
 
+let mouse = {
+    position: { x: 0, y: 0 },
+    pressed: false,
+    repeat: false,
+
+    get justPressed() { return this.pressed && !this.repeat }
+};
+
 function btn(buttonKey) {
     return btns[buttonKey].pressed;
 }
@@ -193,14 +182,6 @@ function btn(buttonKey) {
 function btnp(buttonKey) {
     return btns[buttonKey].pressed && !btns[buttonKey].repeat;
 }
-
-let mouse = {
-    position: new Vec(),
-    pressed: false,
-    repeat: false,
-
-    get justPressed() { return this.pressed && !this.repeat }
-};
 
 /* Asset Loading */
 let loadingPromises = [];
@@ -291,13 +272,14 @@ class SpriteSheet {
             x, y, this.spriteWidth, this.spriteHeight)
     }
 
+    // TODO: Remove, not worth having the two ways. It creates inconsistency
     cspr(index, x, y) {
         this.spr(index, x - this.spriteWidth / 2, y - this.spriteHeight / 2);
     }
 }
 
 let spriteSheet = {};
-function loadSpriteSheet(name, src, rows, cols, scale = _hardware.defaultPixelScale) {
+function loadSpriteSheet(name, src, rows, cols, scale = 1) {
     spriteSheet[name] = new SpriteSheet(src, rows, cols, scale);
     loadingPromises.push(spriteSheet[name].load());
 }
@@ -354,6 +336,8 @@ function elapsedSeconds() {
 }
 
 function loop() {
+
+    /* Button Inputs */
     for (let btn in btns) {
         let done = false;
         btns[btn].keys.forEach(key => {
@@ -370,10 +354,12 @@ function loop() {
         });
     }
 
+    /* Mouse Inputs */
     mouse.position = _hardware.coord(_hardware.input.mouse.x, _hardware.input.mouse.y);
     mouse.repeat = _hardware.input.mouse.pressed && mouse.pressed;
     mouse.pressed = _hardware.input.mouse.pressed;
 
+    /* Frame Data and Update */
     let now = new Date()
     let dt = (now - _hardware.lastUpdate)/1000;
     _hardware.lastUpdate = now;
@@ -382,51 +368,59 @@ function loop() {
         dt = 0;
     }
     update(dt);
+
+    /* Debug */
     if (_hardware.pixelGrid.display) {
         let size = _hardware.pixelGrid.size;
         let ctx = _hardware.context();
-        for (let x = size / 2; x < screen().width; x +=size * 2) {
-            let halfwayLine = Math.abs(x - screen().width / 2) < pixelSize;
+
+        // TODO: Update to use rect
+        for (let x = size / 2; x < _hardware.width; x +=size * 2) {
+            let halfwayLine = Math.abs(x - _hardware.width / 2) < pixelSize;
             ctx.strokeStyle  = colors[_hardware.pixelGrid.color] + (halfwayLine ? 'C0' : '70');
             ctx.beginPath();
             ctx.lineWidth = size;
             ctx.moveTo(x, 0);
-            ctx.lineTo(x, screen().height);
+            ctx.lineTo(x, _hardware.height);
             ctx.stroke();
             ctx.closePath();
         }
-        for (let y = size / 2; y < screen().height; y += size * 2) {
-            let halfwayLine = Math.abs(y - screen().height / 2) < pixelSize;
+
+        for (let y = size / 2; y < _hardware.height; y += size * 2) {
+            let halfwayLine = Math.abs(y - _hardware.height / 2) < pixelSize;
             ctx.strokeStyle  = colors[_hardware.pixelGrid.color] + (halfwayLine ? 'C0' : '70');
             ctx.beginPath();
             ctx.lineWidth = size;
             ctx.moveTo(0, y);
-            ctx.lineTo(screen().width, y);
+            ctx.lineTo(_hardware.width, y);
             ctx.stroke();
             ctx.closePath();
         }
     }
+
     if (_hardware.displayFPS) {
         _hardware.lastSecondTimestamps.push(now);
         let filter = timestamp => now - timestamp < 1000;
         _hardware.lastSecondTimestamps = _hardware.lastSecondTimestamps.filter(filter);
         print(_hardware.lastSecondTimestamps.length, 0, 0, 7)
     }
+
+    /* Next Frame Request */
     requestAnimationFrame(loop);
 }
 
 function main() {
-    // Canvas
+    /* Canvas */
     _hardware.canvas().width = _hardware.width;
     _hardware.canvas().style.width = _hardware.width;
     _hardware.canvas().height = _hardware.height;
     _hardware.canvas().style.height = _hardware.height;
 
-    // Key events
+    /* Key Events */
     document.onkeydown = e => _hardware.input[e.key.toUpperCase()] = true;
     document.onkeyup = e => _hardware.input[e.key.toUpperCase()] = false;
 
-    // Mouse events
+    /* Mouse Events */
     _hardware.canvas().onmousemove = e => {
         _hardware.input.mouse.x = e.clientX;
         _hardware.input.mouse.y = e.clientY;
@@ -442,7 +436,7 @@ function main() {
         _hardware.input.mouse.pressed = false;
     }
 
-    // Touch events
+    /* Touch Events */
     _hardware.canvas().ontouchmove = e =>  {
         _hardware.input.mouse.x = e.changedTouches[0].clientX;
         _hardware.input.mouse.y = e.changedTouches[0].clientY;
@@ -458,7 +452,7 @@ function main() {
         _hardware.input.mouse.pressed = false
     }
 
-    // Initialize
+    /* Initialize */
     load();
 
     Promise.allSettled(loadingPromises).then(e => {
@@ -471,9 +465,6 @@ function main() {
 
 /*
 TODO:
-	- Fix screenshots
-	- Replace line drawgins with rectangle drawings whenever possible
-	- Double back on the Vec and Rect classes
 	- Add the ability to screen shake
 	- Add built-in PAUSE and FRAME ADVANCE features for debugging
 */

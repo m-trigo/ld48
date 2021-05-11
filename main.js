@@ -1,5 +1,5 @@
 // Consts
-const pixelSize = _hardware.defaultPixelScale;
+const pixelSize = 4;
 const marginSize = pixelSize * 4;
 
 // Debug Settings
@@ -303,7 +303,7 @@ let progressBar = {
 
         let y = marginSize + ctx.lineWidth * (1.5);
         let start = marginSize + pixelSize * 3;
-        let end = screen().width - marginSize - pixelSize * 5;
+        let end = 512 - marginSize - pixelSize * 5;
         ctx.beginPath();
         ctx.strokeStyle = colors[7];
         ctx.moveTo(start, y);
@@ -456,7 +456,7 @@ function levelUpdate(dt) {
     spriteSheet['progress-bar'].spr(0, 0, marginSize);
     progressBar.draw(dt);
 
-    spriteSheet['hud-bars'].spr(0, marginSize, screen().height - marginSize - spriteSheet['hud-bars'].spriteHeight);
+    spriteSheet['hud-bars'].spr(0, marginSize, 512 - marginSize - spriteSheet['hud-bars'].spriteHeight);
     fuelBar.draw(dt);
     shieldBar.draw(dt);
 
@@ -518,15 +518,15 @@ function load() {
 
     music['bgm'].loop = true;
 
-    loadSpriteSheet('player', './sprites/player.png', 1, 1);
-    loadSpriteSheet('margin', './sprites/margin.png', 1, 1);
-    loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1);
-    loadSpriteSheet('progress-bar', './sprites/progress-bar.png', 1, 1);
-    loadSpriteSheet('items', './sprites/items.png', 1, 2);
-    loadSpriteSheet('finish-line', './sprites/finish-line.png', 1, 1);
-    loadSpriteSheet('asteroids', './sprites/asteroids.png', 1, 3);
-    loadSpriteSheet('portal', './sprites/portal.png', 1, 1);
-    loadSpriteSheet('title-screen-frame', './sprites/title-screen-frame.png', 1, 1);
+    loadSpriteSheet('player', './sprites/player.png', 1, 1, pixelSize);
+    loadSpriteSheet('margin', './sprites/margin.png', 1, 1, pixelSize);
+    loadSpriteSheet('hud-bars', './sprites/hud-bars.png', 1, 1, pixelSize);
+    loadSpriteSheet('progress-bar', './sprites/progress-bar.png', 1, 1, pixelSize);
+    loadSpriteSheet('items', './sprites/items.png', 1, 2, pixelSize);
+    loadSpriteSheet('finish-line', './sprites/finish-line.png', 1, 1, pixelSize);
+    loadSpriteSheet('asteroids', './sprites/asteroids.png', 1, 3, pixelSize);
+    loadSpriteSheet('portal', './sprites/portal.png', 1, 1, pixelSize);
+    loadSpriteSheet('title-screen-frame', './sprites/title-screen-frame.png', 1, 1, pixelSize);
 }
 
 function init() {
