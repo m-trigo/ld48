@@ -111,7 +111,7 @@ class Vec {
     }
 }
 
-// TODO: Modify to use (start, end) which is not orientation dependent
+// Refactor. Modify to use (start, end) which is not orientation dependent
 class Rect {
 
     constructor(start, width, height) {
@@ -139,7 +139,8 @@ class Rect {
     }
 }
 
-class StepAnimation {
+// Refactor
+class Animation {
 
     constructor(runtime, steps, stepCb, linearCb = null, endCb = () => this.step = 0) {
         this.runtime = runtime;
@@ -177,6 +178,9 @@ class StepAnimation {
     }
 }
 
+class Sequenence {
+
+}
 
 function getScreenShakeSettings() {
     return {
@@ -512,9 +516,19 @@ function main() {
 }
 
 /*
-TODO:
-	- Add the ability to screen shake (create Camera object?)
-    - Move fade-in/fade-out into the library
-    - Add a "Sequence" feature for
-	- Add built-in PAUSE and FRAME ADVANCE features for debugging
+Tasks:
+    -- Next Up --
+    - Add the built-in screen shake option. Move the one in code. Who should update it? Make it an option
+    - Add the built-in screen fade option. Same as above
+
+    -- Refactors --
+    - Refactor the rectangle class
+    - Update the debug pixel grid
+    - The "StepAnimation" class into "Animation"
+    - The "SpriteSheet" class into "Sprite"
+
+    --- Brand New --
+    - Add built-in frame pause/advance
+    - Add a built-in sequencing option (think short cutscenes)
+    - Add full API documentation in the README.md
 */

@@ -371,6 +371,7 @@ let shieldBar = {
     }
 }
 
+// Move to library
 let fadeToBlack = {
     elapsed: 0,
     duration: 2,
