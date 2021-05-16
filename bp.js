@@ -51,6 +51,26 @@ let _hardware = {
         display: false,
         size: 4,
         color: 7
+    },
+
+    /* Utility */
+    screenShake: {
+        offset: { x: 0, y: 0 },
+        amplitude: 1,
+        decay: 1,
+        intensity: 0,
+
+        shake(intensity) {
+            this.intensity = Math.max(this.intensity + intensity, 1);
+        },
+
+        update(dt) {
+            if (this.intensity > 0) {
+                this.intensity = Math.max(this.intensity - dt * this.decay, 0);
+                this.offset.x = this.intensity * this.amplitude * Math.random() * 2 - 1;
+                this.offset.y = this.intensity * this.amplitude * Math.random() * 2 - 1;
+            }
+        }
     }
 }
 
@@ -155,6 +175,22 @@ class StepAnimation {
             this.endCb(this.step, dt, this);
         }
     }
+}
+
+
+function getScreenShakeSettings() {
+    return {
+        amplitude: _hardware.screenShake.amplitude,
+        decay: _hardware.screenShake.decay
+    };
+}
+function setScreenShakeSettings(amplitude, decay) {
+    _hardware.screenShake.amplitude = amplitude;
+    _hardware.screenShake.decay = decay;
+}
+
+function shakeScreen(intensity) {
+    _hardware.screenShake.shake(intensity);
 }
 
 /* Input */
@@ -359,7 +395,7 @@ function loop() {
     mouse.repeat = _hardware.input.mouse.pressed && mouse.pressed;
     mouse.pressed = _hardware.input.mouse.pressed;
 
-    /* Frame Data and Update */
+    /* Frame Data*/
     let now = new Date()
     let dt = (now - _hardware.lastUpdate)/1000;
     _hardware.lastUpdate = now;
@@ -367,7 +403,19 @@ function loop() {
         console.log(`[warn] Frame skipped: ${dt} seconds`)
         dt = 0;
     }
+
+    drawingContext().save();
+
+    /* Screen Effects */
+    _hardware.screenShake.update(dt);
+    if (_hardware.screenShake.offset.x != 0 || _hardware.screenShake.offset.y != 0) {
+        drawingContext().translate(_hardware.screenShake.offset.x, _hardware.screenShake.offset.y);
+    }
+
+    /* Update Life Cycle Call */
     update(dt);
+
+    drawingContext().restore();
 
     /* Debug */
     if (_hardware.pixelGrid.display) {

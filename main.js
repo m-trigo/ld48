@@ -253,7 +253,7 @@ class Level {
                 }
                 player.shield -= asteroid.damage;
                 sfx['hit'].play();
-                screenShake.shake();
+                shakeScreen(1);
             }
         });
 
@@ -407,24 +407,6 @@ let fadeToBlack = {
     }
 }
 
-let screenShake = {
-    amplitude: pixelSize,
-    intensity: 0,
-    offset: { x: 0, y: 0},
-
-    shake() {
-	    this.intensity = 1;
-    },
-
-    update(dt) {
-        if (this.intensity > 0) {
-            this.intensity = Math.max(this.intensity - dt, 0);
-            this.offset.x = this.intensity * this.amplitude * Math.random() * 2 - 1;
-            this.offset.y = this.intensity * this.amplitude * Math.random() * 2 - 1;
-        }
-    }
-}
-
 // Game Loops
 function titleScreenUpdate(dt) {
     cls(0);
@@ -467,14 +449,6 @@ function levelUpdate(dt) {
     // Updates
     level.update(dt);
 
-    // Shake Start
-    screenShake.update(dt);
-
-    drawingContext().save();
-    if (screenShake.offset.x != 0 || screenShake.offset.y != 0) {
-        drawingContext().translate(screenShake.offset.x, screenShake.offset.y);
-    }
-
     // Drawings
     cls(0);
     level.draw(dt);
@@ -489,9 +463,6 @@ function levelUpdate(dt) {
 
     // Transitions
     fadeToBlack.draw(dt);
-
-    // Shake End
-    drawingContext().restore();
 }
 
 function anyDirectionPressed() {
@@ -560,7 +531,7 @@ function load() {
 }
 
 function init() {
-    //enableGrid(true);
+    setScreenShakeSettings(pixelSize, 1);
     player = new Player();
     level = new Level();
 }
