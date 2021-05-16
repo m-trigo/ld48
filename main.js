@@ -288,7 +288,7 @@ class Level {
 }
 
 // Variables
-let stateUpdate = titleScreenUpdate;
+let stateUpdate = null;
 let player = null;
 let level = null;
 let largeFont = { name: 'pico8', size: 32, weight: '' };
@@ -534,6 +534,7 @@ function init() {
     setScreenShakeSettings(pixelSize, 1);
     player = new Player();
     level = new Level();
+    stateUpdate = levelUpdate;
 }
 
 function update(dt) {
