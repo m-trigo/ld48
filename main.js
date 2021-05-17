@@ -39,8 +39,7 @@ class Player {
         spriteSheet['player'].cspr(0, pos.x + pixelSize, pos.y - pixelSize + yOffset);
 
         if (visualDebug) {
-            let rect = new Rect(pos, pixelSize, pixelSize);
-            rect.draw();
+            new Vec(pos.x, pos.y).draw();
         }
     }
 };
@@ -333,9 +332,8 @@ let progressBar = {
             return;
         }
 
-        let rect = new Rect(new Vec(x + 2 * pixelSize, y -1.5 * pixelSize), pixelSize * 3, pixelSize * 3);
-        rect.color = colors[7];
-        rect.draw();
+        ctx.fillStyle = colors[7];
+        ctx.fillRect(x + 2 * pixelSize, y -1.5 * pixelSize, pixelSize * 3, pixelSize * 3);
     }
 }
 
@@ -349,9 +347,10 @@ let fuelBar = {
         let width = barWidth * pixelSize * progress;
         let x = 136;
         let y = 452;
-        let rect = new Rect(new Vec(x, y), width, pixelSize * 3);
-        rect.color = colors[12];
-        rect.draw();
+
+        let ctx = drawingContext();
+        ctx.fillStyle = colors[12];
+        ctx.fillRect(x, y, width, pixelSize * 3);
     }
 }
 
@@ -365,9 +364,10 @@ let shieldBar = {
         let width = barWidth * pixelSize * progress;
         let x = 136;
         let y = 452 + 7 * pixelSize;
-        let rect = new Rect(new Vec(x, y), width, pixelSize * 3);
-        rect.color = colors[11];
-        rect.draw();
+
+        let ctx = drawingContext();
+        ctx.fillStyle = colors[11];
+        ctx.fillRect(x, y, width, pixelSize * 3);
     }
 }
 
@@ -475,6 +475,7 @@ function init() {
     player = new Player();
     level = new Level();
     stateUpdate = titleScreenUpdate;
+    enableGrid(false);
 }
 
 function update(dt) {
