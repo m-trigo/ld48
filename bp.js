@@ -270,10 +270,10 @@ class Sequenence {
 
 }
 
-function shakeScreen(intensity, amplitude, decay) {
+function shakeScreen(amplitude = 1, decay = 1, intensityIncrease = 1) {
     _hardware.screenShake.amplitude = amplitude;
     _hardware.screenShake.decay = decay;
-    _hardware.screenShake.shake(intensity);
+    _hardware.screenShake.shake(intensityIncrease);
 }
 
 function fadeScreen(color, fadeTime, fadeInCallback, fadeOutCallback) {
@@ -591,7 +591,6 @@ function main() {
 Tasks:
 
     -- Refactors --
-    - Update the debug pixel grid
     - The "StepAnimation" class into "Animation"
     - The "SpriteSheet" class into "Sprite"
 

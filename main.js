@@ -252,7 +252,7 @@ class Level {
                 }
                 player.shield -= asteroid.damage;
                 sfx['hit'].play();
-                shakeScreen(1, 1, 1);
+                shakeScreen();
             }
         });
 
@@ -427,6 +427,7 @@ function anyDirectionPressed() {
 }
 
 function gameOverUpdate(dt) {
+    shakeScreen(0);
     cls(0);
 
     spriteSheet['title-screen-frame'].spr(0, 0, 0);
@@ -438,6 +439,7 @@ function gameOverUpdate(dt) {
 }
 
 function victoryUpdate(dt) {
+    shakeScreen(0);
     cls(0);
 
     spriteSheet['title-screen-frame'].spr(0, 0, 0);
