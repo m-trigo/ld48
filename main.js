@@ -208,7 +208,7 @@ class Level {
             player.velocity.y -= player.velocity.y * Player.accelerationFactor * 0.1 * dt;
             if (Math.abs(player.velocity.y) < pixelSize && player.velocity.y > 0) {
                 player.velocity.y = 0;
-                fadeToBlack.start(() => stateUpdate = gameOverUpdate);
+                fadeScreen(0, 1, () => stateUpdate = gameOverUpdate)
             }
             player.velocity.x = 0;
         }
@@ -249,17 +249,17 @@ class Level {
             if (xCollides && yCollides) {
                 asteroid.destroyed = true;
                 if (player.shield > 0 && player.shield <= asteroid.damage) {
-                    fadeToBlack.start(() => stateUpdate = gameOverUpdate);
+                    fadeScreen(0, 1, () => stateUpdate = gameOverUpdate);
                 }
                 player.shield -= asteroid.damage;
                 sfx['hit'].play();
-                shakeScreen(1);
+                shakeScreen(1, 1, 1);
             }
         });
 
         if (!this.complete && player.pos.y > this.end) {
             this.complete = true;
-            fadeToBlack.start(() => stateUpdate = victoryUpdate);
+            fadeScreen(0, 1, () => stateUpdate = victoryUpdate);
         }
     }
 
@@ -371,43 +371,6 @@ let shieldBar = {
     }
 }
 
-// Move to library
-let fadeToBlack = {
-    elapsed: 0,
-    duration: 2,
-    active: false,
-    reverse: false,
-    area: new Rect(new Vec(0, 0), 512, 512),
-    endCallback: null,
-
-    start(endCallback, reverse = false) {
-        if (!this.active) {
-            this.endCallback = endCallback;
-            this.elapsed = 0;
-            this.active = true;
-            this.reverse = reverse;
-        }
-    },
-
-    draw(dt) {
-        if (!this.active) {
-            return;
-        }
-        this.elapsed += dt;
-        let progress = Math.min(this.elapsed / this.duration, 1);
-        this.area.color = `rgba(0, 0, 0, ${this.reverse ? (1 - progress ) : progress})`;
-        this.area.draw();
-        if (progress == 1) {
-            this.active = false;
-            if (this.endCallback) {
-                this.endCallback();
-                this.reverse = true;
-                fadeToBlack.start(null, true);
-            }
-        }
-    }
-}
-
 // Game Loops
 function titleScreenUpdate(dt) {
     cls(0);
@@ -423,17 +386,13 @@ function titleScreenUpdate(dt) {
     print('MOVE .... [A] or [D]', pixelSize * 24, pixelSize * 80, 7, mediumFont);
     print('START ... [X] or [C]', pixelSize * 24, pixelSize * 90, 7, mediumFont);
 
-    fadeToBlack.draw(dt);
-    if (fadeToBlack.active) {
-        return;
-    }
-
-    if (btnp('x') || btnp('o')) {
-        fadeToBlack.start(() => {
+    if (btnp('x') || btnp('o') || anyDirectionPressed()) {
+        let onFadeInComplete = () => {
             init();
-            music['bgm'].play();
             stateUpdate = levelUpdate;
-        });
+            music['bgm'].play();
+        };
+        fadeScreen(0, 1, onFadeInComplete, null);
     }
 }
 
@@ -461,9 +420,6 @@ function levelUpdate(dt) {
     spriteSheet['hud-bars'].spr(0, marginSize, 512 - marginSize - spriteSheet['hud-bars'].spriteHeight);
     fuelBar.draw(dt);
     shieldBar.draw(dt);
-
-    // Transitions
-    fadeToBlack.draw(dt);
 }
 
 function anyDirectionPressed() {
@@ -476,16 +432,8 @@ function gameOverUpdate(dt) {
     spriteSheet['title-screen-frame'].spr(0, 0, 0);
     print('GAME OVER', pixelSize * 30, pixelSize * 50, 7, largeFont);
 
-    // Transitions
-    fadeToBlack.draw(dt);
-    if (fadeToBlack.active) {
-        return;
-    }
-
     if (btnp('x') || btnp('o') || anyDirectionPressed()) {
-        fadeToBlack.start(() => {
-            stateUpdate = titleScreenUpdate;
-        });
+        fadeScreen(0, 1, () => stateUpdate = titleScreenUpdate, null);
     }
 }
 
@@ -496,16 +444,8 @@ function victoryUpdate(dt) {
     print('THANK YOU', pixelSize * 30, pixelSize * 50, 7, largeFont);
     print('FOR PLAYING!', pixelSize * 20, pixelSize * 70, 7, largeFont);
 
-    // Transitions
-    fadeToBlack.draw(dt);
-    if (fadeToBlack.active) {
-        return;
-    }
-
     if (btnp('x') || btnp('o') || anyDirectionPressed()) {
-        fadeToBlack.start(() => {
-            stateUpdate = titleScreenUpdate;
-        });
+        fadeScreen(0, 1, () => stateUpdate = titleScreenUpdate, null);
     }
 }
 
@@ -532,10 +472,9 @@ function load() {
 }
 
 function init() {
-    setScreenShakeSettings(pixelSize, 1);
     player = new Player();
     level = new Level();
-    stateUpdate = levelUpdate;
+    stateUpdate = titleScreenUpdate;
 }
 
 function update(dt) {
@@ -552,15 +491,15 @@ function update(dt) {
     stateUpdate(dt);
 }
 /*
-    -- Feature Complete --
+    -- Next Features --
 
-- SFX
-- Screen shake
+- Menu SFX
+- Fix how running out of fuel feels like
 - Animations
 - Polish HUD (flashing animations, shake animations)
-- Music
-- Title Screen
-- Victory Screen
+- Fix music loop
+- Improve title screen
+- Improved victory screen (Fly Into Credits Idea)
 - Game Over Screen
 
     -- Post Jam --

@@ -71,6 +71,66 @@ let _hardware = {
                 this.offset.y = this.intensity * this.amplitude * Math.random() * 2 - 1;
             }
         }
+    },
+
+    screenFade: {
+        color: 0,
+        fadeTime: 1,
+        fadeInComplete: false,
+        fadeOutComplete: false,
+        onFadeInComplete: null,
+        onFadeOutComplete: null,
+        elapsed: 0,
+
+        isActive: function () {
+            return 0 < this.elapsed && this.elapsed <= this.fadeTime * 2;
+        },
+
+        start() {
+            this.elapsed = Number.EPSILON;
+            this.nextCallback = this.onFadeInComplete;
+            this.fadeInComplete = false;
+            this.fadeOutComplete = false;
+        },
+
+        update(dt) {
+            if (!this.isActive()) {
+                return;
+            }
+
+            this.elapsed += dt;
+            let progress = Math.min(this.elapsed / this.fadeTime, 2);
+
+            let fadeColor = colors[this.color];
+            let r = parseInt(fadeColor.substr(1, 2), 16)
+            let g = parseInt(fadeColor.substr(3, 2), 16)
+            let b = parseInt(fadeColor.substr(5, 2), 16)
+            let a = progress;
+            if (a > 1) {
+                a = 2 - a;
+            }
+            fadeColor = `rgba(${r}, ${g}, ${b}, ${a})`;
+
+            drawingContext().beginPath();
+            drawingContext().rect(0, 0, _hardware.canvas().width, _hardware.canvas().height);
+            drawingContext().fillStyle = fadeColor;
+            drawingContext().fill();
+            drawingContext().closePath();
+
+            if (progress >= this.fadeTime * 1 && !this.fadeInComplete) {
+                this.fadeInComplete = true;
+                if (this.onFadeInComplete) {
+                    this.onFadeInComplete();
+                }
+            }
+
+            if (progress >= this.fadeTime * 2 && !this.fadeOutComplete) {
+                this.fadeOutComplete = true;
+                if (this.onFadeOutComplete) {
+                    this.onFadeOutComplete();
+                }
+            }
+        }
     }
 }
 
@@ -112,6 +172,7 @@ class Vec {
 }
 
 // Refactor. Modify to use (start, end) which is not orientation dependent
+// Do not add dependency with Vec!
 class Rect {
 
     constructor(start, width, height) {
@@ -182,19 +243,18 @@ class Sequenence {
 
 }
 
-function getScreenShakeSettings() {
-    return {
-        amplitude: _hardware.screenShake.amplitude,
-        decay: _hardware.screenShake.decay
-    };
-}
-function setScreenShakeSettings(amplitude, decay) {
+function shakeScreen(intensity, amplitude, decay) {
     _hardware.screenShake.amplitude = amplitude;
     _hardware.screenShake.decay = decay;
+    _hardware.screenShake.shake(intensity);
 }
 
-function shakeScreen(intensity) {
-    _hardware.screenShake.shake(intensity);
+function fadeScreen(color, fadeTime, fadeInCallback, fadeOutCallback) {
+    _hardware.screenFade.color = color;
+    _hardware.screenFade.fadeTime = fadeTime;
+    _hardware.screenFade.onFadeInComplete = fadeInCallback;
+    _hardware.screenFade.onFadeOutComplete = fadeOutCallback;
+    _hardware.screenFade.start();
 }
 
 /* Input */
@@ -421,6 +481,8 @@ function loop() {
 
     drawingContext().restore();
 
+    _hardware.screenFade.update(dt);
+
     /* Debug */
     if (_hardware.pixelGrid.display) {
         let size = _hardware.pixelGrid.size;
@@ -518,8 +580,6 @@ function main() {
 /*
 Tasks:
     -- Next Up --
-    - Add the built-in screen shake option. Move the one in code. Who should update it? Make it an option
-    - Add the built-in screen fade option. Same as above
 
     -- Refactors --
     - Refactor the rectangle class
@@ -528,7 +588,9 @@ Tasks:
     - The "SpriteSheet" class into "Sprite"
 
     --- Brand New --
-    - Add built-in frame pause/advance
+    - Add a built-in frame pause/advance utility
     - Add a built-in sequencing option (think short cutscenes)
+    - Add built-in tweening/easing functions?
     - Add full API documentation in the README.md
+    - Add mobile screen controls
 */
