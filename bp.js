@@ -111,11 +111,9 @@ let _hardware = {
             }
             fadeColor = `rgba(${r}, ${g}, ${b}, ${a})`;
 
-            drawingContext().beginPath();
-            drawingContext().rect(0, 0, _hardware.canvas().width, _hardware.canvas().height);
-            drawingContext().fillStyle = fadeColor;
-            drawingContext().fill();
-            drawingContext().closePath();
+            let ctx = drawingContext();
+            ctx.fillStyle = fadeColor;
+            ctx.fillRect(0, 0, _hardware.canvas().width, _hardware.canvas().height);
 
             if (progress >= this.fadeTime * 1 && !this.fadeInComplete) {
                 this.fadeInComplete = true;
@@ -172,10 +170,8 @@ class Vec {
 
     draw() {
         let ctx = drawingContext();
-        ctx.beginPath();
         ctx.fillStyle = colors[14];
         ctx.fillRect(this.x, this.y, 4, 4);
-        ctx.closePath();
     }
 }
 
@@ -218,7 +214,6 @@ class Rect {
 
     draw() {
         let ctx = drawingContext();
-        ctx.beginPath();
         ctx.fillStyle = colors[14];
 
         // Top
@@ -229,9 +224,6 @@ class Rect {
         ctx.fillRect(this.xMin, this.yMin, 4, this.height);
         // Right
         ctx.fillRect(this.xMin + this.width - 4, this.yMin, 4, this.height);
-
-        ctx.fill();
-        ctx.closePath();
     }
 }
 
@@ -445,10 +437,8 @@ let colors = {
 
 function cls(color = 0) {
     let ctx = drawingContext();
-    ctx.beginPath();
     ctx.fillStyle = colors[color];
     ctx.fillRect(0, 0, _hardware.canvas().width, _hardware.canvas().height);
-    ctx.closePath();
 }
 
 function print(text, x, y, color = 0, fontOverride = null) {
@@ -521,28 +511,14 @@ function loop() {
     if (_hardware.pixelGrid.display) {
         let size = _hardware.pixelGrid.size;
         let ctx = _hardware.context();
+        ctx.fillStyle  = colors[_hardware.pixelGrid.color] + '70';
 
-        // TODO: Update to use rect
-        for (let x = size / 2; x < _hardware.width; x +=size * 2) {
-            let halfwayLine = Math.abs(x - _hardware.width / 2) < pixelSize;
-            ctx.strokeStyle  = colors[_hardware.pixelGrid.color] + (halfwayLine ? 'C0' : '70');
-            ctx.beginPath();
-            ctx.lineWidth = size;
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, _hardware.height);
-            ctx.stroke();
-            ctx.closePath();
+        for (let x = 0; x < _hardware.width; x += 2 * size) {
+            ctx.fillRect(x, 0, size, _hardware.height);
         }
 
-        for (let y = size / 2; y < _hardware.height; y += size * 2) {
-            let halfwayLine = Math.abs(y - _hardware.height / 2) < pixelSize;
-            ctx.strokeStyle  = colors[_hardware.pixelGrid.color] + (halfwayLine ? 'C0' : '70');
-            ctx.beginPath();
-            ctx.lineWidth = size;
-            ctx.moveTo(0, y);
-            ctx.lineTo(_hardware.width, y);
-            ctx.stroke();
-            ctx.closePath();
+        for (let y = 0; y < _hardware.height; y += 2 * size) {
+            ctx.fillRect(0, y, _hardware.width, size);
         }
     }
 
