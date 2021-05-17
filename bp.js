@@ -169,34 +169,69 @@ class Vec {
     copy() {
         return new Vec(this.x, this.y);
     }
-}
-
-// Refactor. Modify to use (start, end) which is not orientation dependent
-// Do not add dependency with Vec!
-class Rect {
-
-    constructor(start, width, height) {
-        this.start = start;
-        this.width = width;
-        this.height = height;
-        this.visible = true;
-        this.color = colors[14];
-    }
 
     draw() {
-        if (!this.visible) return;
         let ctx = drawingContext();
         ctx.beginPath();
-        ctx.rect(this.start.x, this.start.y, this.width, this.height);
-        ctx.fillStyle = this.color;
-        ctx.fill();
+        ctx.fillStyle = colors[14];
+        ctx.fillRect(this.x, this.y, 4, 4);
         ctx.closePath();
+    }
+}
+
+class Rect {
+
+    constructor(start, end) {
+        this.start = start;
+        this.end = end;
+    }
+
+    get width() {
+        return Math.abs(this.start.x - this.end.x);
+    }
+
+    get height() {
+        return Math.abs(this.start.y - this.end.y);
+    }
+
+    get xMin() {
+        return Math.min(this.start.x, this.end.x);
+    }
+
+    get xMax() {
+        return Math.max(this.start.x, this.end.x);
+    }
+
+    get yMin() {
+        return Math.min(this.start.y, this.end.y);
+    }
+
+    get yMax() {
+        return Math.max(this.start.y, this.end.y);
     }
 
     contains(vec) {
-        let result = this.start.x <= vec.x && vec.x <= this.start.x + this.width;
-        result &= this.start.y <= vec.y && vec.y <= this.start.y + this.height;
-        return result;
+        let xContains = this.xMin <= vec.x && vec.x <= this.xMax;
+        let yContains = this.yMin <= vec.y && vec.y <= this.yMax;
+        return xContains && yContains;
+    }
+
+    draw() {
+        let ctx = drawingContext();
+        ctx.beginPath();
+        ctx.fillStyle = colors[14];
+
+        // Top
+        ctx.fillRect(this.xMin, this.yMin, this.width, 4);
+        // Bottom
+        ctx.fillRect(this.xMin, this.yMin + this.height - 4, this.width, 4);
+        // Left
+        ctx.fillRect(this.xMin, this.yMin, 4, this.height);
+        // Right
+        ctx.fillRect(this.xMin + this.width - 4, this.yMin, 4, this.height);
+
+        ctx.fill();
+        ctx.closePath();
     }
 }
 
@@ -411,9 +446,8 @@ let colors = {
 function cls(color = 0) {
     let ctx = drawingContext();
     ctx.beginPath();
-    ctx.rect(0, 0, _hardware.canvas().width, _hardware.canvas().height);
     ctx.fillStyle = colors[color];
-    ctx.fill();
+    ctx.fillRect(0, 0, _hardware.canvas().width, _hardware.canvas().height);
     ctx.closePath();
 }
 
@@ -579,10 +613,8 @@ function main() {
 
 /*
 Tasks:
-    -- Next Up --
 
     -- Refactors --
-    - Refactor the rectangle class
     - Update the debug pixel grid
     - The "StepAnimation" class into "Animation"
     - The "SpriteSheet" class into "Sprite"
