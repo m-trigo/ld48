@@ -440,7 +440,7 @@ function loop() {
     let dt = (now - _hardware.lastUpdate)/1000;
     _hardware.lastUpdate = now;
     if (dt > 0.2) {
-        console.log(`[warn] Frame skipped: ${dt} seconds`)
+        console.log(`Frame skipped: ${dt} seconds`)
         dt = 0;
     }
 
@@ -540,11 +540,8 @@ function main() {
 }
 
 /*
-Tasks:
-
-    --- Brand New --
-    - Add a built-in frame pause/advance utility
-    - Add built-in tweening/easing functions?
-    - Add full API documentation in the README.md
-    - Add mobile screen controls
+- Add a built-in frame pause/advance utility
+- Add built-in tweening/easing functions
+- Add full API documentation in the README.md
+- Add mobile screen controls
 */
