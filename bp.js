@@ -227,49 +227,6 @@ class Rect {
     }
 }
 
-// Refactor
-class Animation {
-
-    constructor(runtime, steps, stepCb, linearCb = null, endCb = () => this.step = 0) {
-        this.runtime = runtime;
-        this.steps = steps;
-        this.linearCb = linearCb;
-        this.stepCb = stepCb;
-        this.endCb = endCb;
-        this.elapsed = 0;
-        this.step = 0;
-        this.playing = true;
-    }
-
-    get period() {
-        return this.runtime/this.steps;
-    };
-
-    animate(dt) {
-        if (!this.playing) {
-            return;
-        }
-        if (this.linearCb) {
-            this.linearCb(this.step, dt, this)
-        }
-        this.elapsed += dt;
-        if (this.elapsed > this.period) {
-            this.elapsed %= this.period;
-            if (this.stepCb) {
-                this.stepCb(this.step, dt, this);
-            }
-            this.step++;
-        }
-        if (this.step == this.steps && this.endCb) {
-            this.endCb(this.step, dt, this);
-        }
-    }
-}
-
-class Sequenence {
-
-}
-
 function shakeScreen(amplitude = 1, decay = 1, intensityIncrease = 1) {
     _hardware.screenShake.amplitude = amplitude;
     _hardware.screenShake.decay = decay;
@@ -591,12 +548,10 @@ function main() {
 Tasks:
 
     -- Refactors --
-    - The "StepAnimation" class into "Animation"
     - The "SpriteSheet" class into "Sprite"
 
     --- Brand New --
     - Add a built-in frame pause/advance utility
-    - Add a built-in sequencing option (think short cutscenes)
     - Add built-in tweening/easing functions?
     - Add full API documentation in the README.md
     - Add mobile screen controls
