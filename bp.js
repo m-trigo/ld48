@@ -335,15 +335,6 @@ class SpriteSheet {
     get spriteWidth() { return this.scale * this.unscaledSpriteWidth; }
     get spriteHeight() { return this.scale * this.unscaledSpriteHeight; }
 
-    load() {
-        let promise = new Promise((resolve, reject) => {
-            this.img.onload = resolve;
-            this.img.onerror = reject;
-            this.img.src = this.imageSource;
-        });
-        return promise;
-    }
-
     spr(index, x, y) {
         if (!this.img) {
             return
@@ -356,7 +347,6 @@ class SpriteSheet {
             x, y, this.spriteWidth, this.spriteHeight)
     }
 
-    // TODO: Remove, not worth having the two ways. It creates inconsistency
     cspr(index, x, y) {
         this.spr(index, x - this.spriteWidth / 2, y - this.spriteHeight / 2);
     }
@@ -365,7 +355,12 @@ class SpriteSheet {
 let spriteSheet = {};
 function loadSpriteSheet(name, src, rows, cols, scale = 1) {
     spriteSheet[name] = new SpriteSheet(src, rows, cols, scale);
-    loadingPromises.push(spriteSheet[name].load());
+    let promise = new Promise((resolve, reject) => {
+        spriteSheet[name].img.onload = resolve;
+        spriteSheet[name].img.onerror = reject;
+        spriteSheet[name].img.src = spriteSheet[name].imageSource;
+    });
+    loadingPromises.push(promise);
 }
 
 /* Drawing */
@@ -546,9 +541,6 @@ function main() {
 
 /*
 Tasks:
-
-    -- Refactors --
-    - The "SpriteSheet" class into "Sprite"
 
     --- Brand New --
     - Add a built-in frame pause/advance utility
