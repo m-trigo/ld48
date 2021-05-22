@@ -47,6 +47,8 @@ let _hardware = {
 
     /* Debug */
     displayFPS: false,
+    frameDebugMode: false,
+    frameAdvanceDt: 1/60,
     pixelGrid: {
         display: false,
         size: 4,
@@ -133,6 +135,10 @@ let _hardware = {
 }
 
 /* Debug */
+function frameDebugMode(on) {
+    _hardware.frameDebugMode = on;
+}
+
 function FPS(on) {
     _hardware.displayFPS = on;
 }
@@ -440,8 +446,15 @@ function loop() {
     let dt = (now - _hardware.lastUpdate)/1000;
     _hardware.lastUpdate = now;
     if (dt > 0.2) {
-        console.log(`Frame skipped: ${dt} seconds`)
+        if (!_hardware.frameDebugMode) {
+            console.log(`Frame skipped: ${dt} seconds`)
+        }
         dt = 0;
+    }
+
+    if (_hardware.frameDebugMode) {
+        dt = _hardware.frameAdvanceDt;
+        debugger;
     }
 
     drawingContext().save();
