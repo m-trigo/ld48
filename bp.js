@@ -61,7 +61,7 @@ let _hardware = {
         intensity: 0,
 
         shake(intensity) {
-            this.intensity = Math.max(this.intensity + intensity, 1);
+            this.intensity = Math.min(this.intensity + intensity, 1);
         },
 
         update(dt) {
