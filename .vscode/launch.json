@@ -5,7 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch index.html",
+            "name": "Attach",
+            "type": "firefox",
+            "request": "attach"
+        },
+        {
+            "name": "Launch",
             "type": "firefox",
             "request": "launch",
             "reAttach": true,
