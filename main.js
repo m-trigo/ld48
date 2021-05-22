@@ -248,7 +248,10 @@ class Level {
             if (xCollides && yCollides) {
                 asteroid.destroyed = true;
                 if (player.shield > 0 && player.shield <= asteroid.damage) {
-                    fadeScreen(0, 1, () => stateUpdate = gameOverUpdate);
+                    fadeScreen(0, 1, () => {
+                        shakeScreen(0);
+                        stateUpdate = gameOverUpdate;
+                    });
                 }
                 player.shield -= asteroid.damage;
                 sfx['hit'].play();
@@ -258,7 +261,10 @@ class Level {
 
         if (!this.complete && player.pos.y > this.end) {
             this.complete = true;
-            fadeScreen(0, 1, () => stateUpdate = victoryUpdate);
+            fadeScreen(0, 1, () => {
+                shakeScreen(0);
+                stateUpdate = victoryUpdate;
+            });
         }
     }
 
@@ -292,6 +298,17 @@ let player = null;
 let level = null;
 let largeFont = { name: 'pico8', size: 32, weight: '' };
 let mediumFont = { name: 'pico8', size: 16, weight: '' };
+let optionSelected = false;
+
+function anyButtonPressed() {
+    for (let key of Object.keys(btns)) {
+        if (btnp(key)) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 // HUD
 let progressBar = {
@@ -386,9 +403,11 @@ function titleScreenUpdate(dt) {
     print('MOVE .... [A] or [D]', pixelSize * 24, pixelSize * 80, 7, mediumFont);
     print('START ... [X] or [C]', pixelSize * 24, pixelSize * 90, 7, mediumFont);
 
-    if (btnp('x') || btnp('o') || anyDirectionPressed()) {
+    if (!optionSelected && anyButtonPressed()) {
+        optionSelected = true;
         let onFadeInComplete = () => {
             init();
+            optionSelected = false;
             stateUpdate = levelUpdate;
             music['bgm'].play();
         };
@@ -422,32 +441,34 @@ function levelUpdate(dt) {
     shieldBar.draw(dt);
 }
 
-function anyDirectionPressed() {
-    return btnp('up') || btnp('down') || btnp('left') || btnp('right');
-}
-
 function gameOverUpdate(dt) {
-    shakeScreen(0);
     cls(0);
 
     spriteSheet['title-screen-frame'].spr(0, 0, 0);
     print('GAME OVER', pixelSize * 30, pixelSize * 50, 7, largeFont);
 
-    if (btnp('x') || btnp('o') || anyDirectionPressed()) {
-        fadeScreen(0, 1, () => stateUpdate = titleScreenUpdate, null);
+    if (!optionSelected && anyButtonPressed()) {
+        optionSelected = true;
+        fadeScreen(0, 1, () => {
+            optionSelected = false;
+            stateUpdate = titleScreenUpdate;
+        }, null);
     }
 }
 
 function victoryUpdate(dt) {
-    shakeScreen(0);
     cls(0);
 
     spriteSheet['title-screen-frame'].spr(0, 0, 0);
     print('THANK YOU', pixelSize * 30, pixelSize * 50, 7, largeFont);
     print('FOR PLAYING!', pixelSize * 20, pixelSize * 70, 7, largeFont);
 
-    if (btnp('x') || btnp('o') || anyDirectionPressed()) {
-        fadeScreen(0, 1, () => stateUpdate = titleScreenUpdate, null);
+    if (!optionSelected && anyButtonPressed()) {
+        optionSelected = true;
+        fadeScreen(0, 1, () => {
+            optionSelected = false;
+            stateUpdate = titleScreenUpdate;
+        }, null);
     }
 }
 
@@ -476,8 +497,8 @@ function load() {
 function init() {
     player = new Player();
     level = new Level();
+    optionSelected = false;
     stateUpdate = titleScreenUpdate;
-    enableGrid(false);
 }
 
 function update(dt) {
