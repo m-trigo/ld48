@@ -273,6 +273,10 @@ function btnp(buttonKey) {
     return btns[buttonKey].pressed && !btns[buttonKey].repeat;
 }
 
+function registerInput(name, keys) {
+    btns[name] = { pressed: false, repeat: false, keys };
+}
+
 /* Asset Loading */
 let loadingPromises = [];
 
