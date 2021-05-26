@@ -6,25 +6,39 @@ const marginSize = pixelSize * 4;
 let freeControl = false;
 let visualDebug = false;
 
+// Variables
+let stateUpdate = null;
+let player = null;
+let level = null;
+let largeFont = { name: 'pico8', size: 32, weight: '' };
+let mediumFont = { name: 'pico8', size: 16, weight: '' };
+let optionSelected = false;
+
 // Data Types
 class Player {
 
-    static horizontalSpeed = 256;
-    static travelSpeed = 256;
+    // Resource Variables
     static maxFuel = 20;
     static startingFuel = Player.maxFuel / 2;
     static maxShield = 20;
     static startingShield = Player.maxShield / 2;
     static baseFuelCost = 1;
+
+    // Control Variables
+    static horizontalSpeed = 64 * pixelSize;
+    static travelSpeed = 64 * pixelSize;
     static screenY = 512 * 3/4;
-    static oscilationAmplitude = pixelSize;
-    static oscilationSpeed = 5;
-    static startingVelocity = new Vec(0, Player.travelSpeed);
+    static startingVelocity = new Vec(0, 0);
     static startingPosition = new Vec(256, 0);
     static accelerationFactor = pixelSize * 2;
 
+    // Visual Variables
+    static oscilationAmplitude = pixelSize;
+    static oscilationSpeed = 5;
+
     constructor() {
-        this.size = spriteSheet['player'].spriteWidth;
+        this.sprite = spriteSheet['player'];
+        this.size = this.sprite.spriteWidth;
         this.pos = Player.startingPosition;
         this.velocity = Player.startingVelocity;
         this.elapsed = 0;
@@ -36,7 +50,7 @@ class Player {
     draw(dt, pos) {
         this.elapsed += dt;
         let yOffset = Math.sin(this.elapsed * Player.oscilationSpeed) * Player.oscilationAmplitude;
-        spriteSheet['player'].cspr(0, pos.x + pixelSize, pos.y - pixelSize + yOffset);
+        this.sprite.cspr(0, pos.x + pixelSize, pos.y - pixelSize + yOffset);
 
         if (visualDebug) {
             new Vec(pos.x, pos.y).draw();
@@ -46,10 +60,13 @@ class Player {
 
 class Item {
 
+    // Resources Variables
+    static fuelRefillAmount = Player.maxFuel / 4;
+    static shieldRefillAmount = Player.maxShield / 4;
+
+    // Visual Variables
     static fuelSpriteIndex = 0;
     static shieldSpriteIndex = 1;
-    static fuelRefillAmount = 5;
-    static shieldRefillAmount = 5;
 
     constructor(type, x, y) {
         this.pos = new Vec(x, y);
@@ -125,9 +142,6 @@ class Level {
         player.velocity = new Vec(0, Player.travelSpeed);
 
         this.fuels = [];
-        this.shields = [];
-        this.asteroids = [];
-
         for (let i = 0; i < 19; i++) {
             let x = this.randomItemX();
             let y = Player.travelSpeed * ( i + 1 ) * 5;
@@ -139,12 +153,14 @@ class Level {
             }
         }
 
+        this.shields = [];
         for (let i = 20; i <= 80; i += 20) {
             let x = this.randomItemX();
             let y = Player.travelSpeed * (i + Math.floor(Math.random() * 5 - 2));
             this.shields.push(new Item('shield', x, y));
         }
 
+        this.asteroids = [];
         for (let i = 0; i < 190; i++) {
             let x = this.randomItemX();
             let y = Player.travelSpeed * 0.5 * (10 + i);
@@ -165,43 +181,27 @@ class Level {
 
     updatePlayer(dt) {
 
-        if (freeControl) {
-            if (btn('up')) {
-                player.pos.y += pixelSize * 64 * dt;
-            }
-            if (btn('left')) {
-                player.pos.x -= pixelSize * 64 * dt;
-            }
-            if (btn('down')) {
-                player.pos.y -= pixelSize * 64 * dt;
-            }
-            if (btn('right')) {
-                player.pos.x += pixelSize * 64 * dt;
-            }
-            return;
-        }
-
-        if (player.state == 'right') {
-            player.velocity.x += (Player.horizontalSpeed - player.velocity.x) * Player.accelerationFactor * dt;
-            if (player.velocity.x > Player.horizontalSpeed) {
-                player.velocity.x = Player.horizontalSpeed
-            }
-        }
-        else if (player.state == 'left') {
-            player.velocity.x += (-Player.horizontalSpeed - player.velocity.x) * Player.accelerationFactor * dt;
-            if (player.velocity.x < -Player.horizontalSpeed) {
-                player.velocity.x = -Player.horizontalSpeed
-            }
-        }
-        else {
-            player.velocity.x -= player.velocity.x * Player.accelerationFactor * 0.5 * dt;
-            if (Math.abs(player.velocity.x) < pixelSize) {
-                player.velocity.x = 0;
-            }
-        }
-
         if (player.fuel > 0) {
             player.fuel = Math.max(player.fuel - dt, 0);
+
+            if (player.state == 'right') {
+                player.velocity.x += (Player.horizontalSpeed - player.velocity.x) * Player.accelerationFactor * dt;
+                if (player.velocity.x > Player.horizontalSpeed) {
+                    player.velocity.x = Player.horizontalSpeed
+                }
+            }
+            else if (player.state == 'left') {
+                player.velocity.x += (-Player.horizontalSpeed - player.velocity.x) * Player.accelerationFactor * dt;
+                if (player.velocity.x < -Player.horizontalSpeed) {
+                    player.velocity.x = -Player.horizontalSpeed
+                }
+            }
+            else {
+                player.velocity.x -= player.velocity.x * Player.accelerationFactor * 0.5 * dt;
+                if (Math.abs(player.velocity.x) < pixelSize) {
+                    player.velocity.x = 0;
+                }
+            }
         }
         else {
             player.velocity.y -= player.velocity.y * Player.accelerationFactor * 0.1 * dt;
@@ -291,14 +291,6 @@ class Level {
         this.drawToScreen(dt, player);
     }
 }
-
-// Variables
-let stateUpdate = null;
-let player = null;
-let level = null;
-let largeFont = { name: 'pico8', size: 32, weight: '' };
-let mediumFont = { name: 'pico8', size: 16, weight: '' };
-let optionSelected = false;
 
 function anyButtonPressed() {
     for (let key of Object.keys(btns)) {
@@ -502,36 +494,24 @@ function init() {
 }
 
 function update(dt) {
-    // Debug
-    if (mouse.justPressed) {
-        let x = Math.floor(mouse.position.x);
-        x = x - x % pixelSize;
-        let y = Math.floor(mouse.position.y);
-        y = y - y % pixelSize;
-        //console.log({x, y});
-    }
-
-    // Scene
     stateUpdate(dt);
 }
+
 /*
-    -- Next Features --
+    -- Core --
 
-- Menu SFX
-- Fix how running out of fuel feels like
-- Animations
-- Polish HUD (flashing animations, shake animations)
-- Fix music loop
-- Improve title screen
-- Improved victory screen (Fly Into Credits Idea)
-- Game Over Screen
+- Fix the game feel when running out of fuel
+- Background parallax stars (movement perception without meteors)
+- Add a static section for the level (i.e. fix meteors being some random bubbles)
 
-    -- Post Jam --
-
-- Fuel is only to dodge!
-    // This will change once we have asteroids.
-    // Space has no friction, fuel = cost to dodge
-    // Running out of fuel relies on shield + luck to go over a fuel pickup
 - Portals, Levels & Recursion
-- Tutorialize Mechanic
+- Tutorialize recursion mechanic
+
+    -- Polish --
+
+- Menu continue (selection) SFX
+- Change font to Monogram (https://datagoblin.itch.io/monogram)
+- Fix music loop
+- HUD flashing on bar update
+- Improved victory screen (Fly Into Credits Idea)
 */
